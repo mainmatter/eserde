@@ -2,6 +2,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, Data, DeriveInput};
 
+mod filter_attributes;
 mod model;
 
 #[proc_macro_derive(Deserialize, attributes(serde))]
@@ -12,8 +13,12 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let shadow_struct_ident = &shadow_type.0.ident;
 
     let shadow_binding = format_ident!("__shadowed");
-    let initialize_from_shadow =
-        initialize_from_shadow(input.data, &format_ident!("Self"), &shadow_binding);
+    let initialize_from_shadow = initialize_from_shadow(
+        input.data,
+        &format_ident!("Self"),
+        &shadow_binding,
+        shadow_struct_ident,
+    );
     let expanded = quote! {
         const _: () = {
             #[derive(::eserde::_serde::Deserialize)]
@@ -35,10 +40,13 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+/// Initialize the target type from the shadow type, assigning each field from the shadow type to the
+/// corresponding field on the target type.
 fn initialize_from_shadow(
     input: Data,
     type_ident: &syn::Ident,
     shadow_binding: &syn::Ident,
+    shadow_type_ident: &syn::Ident,
 ) -> proc_macro2::TokenStream {
     match input {
         Data::Struct(data) => {
@@ -53,7 +61,45 @@ fn initialize_from_shadow(
                 }
             }
         }
-        Data::Enum(_) => unimplemented!(),
-        Data::Union(_) => unimplemented!(),
+        Data::Enum(e) => {
+            let variants = e.variants.iter().map(|variant| {
+                let variant_ident = &variant.ident;
+                match &variant.fields {
+                    syn::Fields::Named(fields) => {
+                        let fields: Vec<_> = fields.named.iter().map(|field| {
+                            let field = field.ident.as_ref().unwrap();
+                            quote! {
+                                #field
+                            }
+                        }).collect();
+                        quote! {
+                            #shadow_type_ident::#variant_ident { #(#fields),* } => #type_ident::#variant_ident { #(#fields),* }
+                        }
+                    }
+                    syn::Fields::Unnamed(fields) => {
+                        let fields: Vec<_> = fields.unnamed.iter().enumerate().map(|(i, _)| {
+                            let i = format_ident!("__v{i}");
+                            quote! {
+                                #i
+                            }
+                        }).collect();
+                        quote! {
+                            #shadow_type_ident::#variant_ident(#(#fields),*) => #type_ident::#variant_ident(#(#fields),*)
+                        }
+                    }
+                    syn::Fields::Unit => {
+                        quote! {
+                            #shadow_type_ident::#variant_ident => #type_ident::#variant_ident
+                        }
+                    }
+                }
+            });
+            quote! {
+                match #shadow_binding {
+                    #(#variants),*
+                }
+            }
+        }
+        Data::Union(_) => unimplemented!("Unions are not supported"),
     }
 }

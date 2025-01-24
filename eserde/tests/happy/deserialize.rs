@@ -10,7 +10,27 @@ struct NamedStruct {
 struct TupleStructOneField(#[serde(default)] Option<u32>);
 
 #[derive(eserde::Deserialize)]
-struct TupleStructMultipleFields(#[serde(default)] Option<u32>, u32, u64);
+struct TupleStructMultipleFields(Option<u32>, u32, #[serde(default)] u64);
+
+#[derive(eserde::Deserialize)]
+enum CLikeEnumOneVariant {
+    A,
+}
+
+#[derive(eserde::Deserialize)]
+enum CLikeEnumMultipleVariants {
+    A,
+    B,
+}
+
+#[derive(eserde::Deserialize)]
+enum EnumWithBothNamedAndTupleVariants {
+    Named { a: u32 },
+    NamedMultiple { a: u32, b: u64 },
+    Tuple(u32),
+    TupleMultiple(u32, u64),
+    Unit,
+}
 
 #[test]
 fn deserialize() {
