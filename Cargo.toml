@@ -1,6 +1,16 @@
-[package]
-name = "eserde"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = ["eserde_derive", "eserde"]
+resolver = "2"
 
-[dependencies]
+[workspace.package]
+edition = "2021"
+repository = "https://github.com/mainmatter/eserde"
+license = "Apache-2.0 OR MIT"
+version = "0.1.0"
+
+[workspace.dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = "2"
+serde = "1"
+indexmap = "2"
