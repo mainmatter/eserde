@@ -9,6 +9,11 @@ struct NamedStruct {
 }
 
 #[derive(eserde::Deserialize)]
+struct GenericStruct<T> {
+    a: T,
+}
+
+#[derive(eserde::Deserialize)]
 struct TupleStructOneField(#[serde(default)] Option<u32>);
 
 #[derive(eserde::Deserialize)]

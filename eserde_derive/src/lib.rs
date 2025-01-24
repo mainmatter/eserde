@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, Data, DeriveInput};
+use syn::{parse_macro_input, Data, DeriveInput, GenericParam, Generics, Lifetime};
 
 mod filter_attributes;
 mod model;
@@ -21,11 +22,15 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
 
     let shadow_binding = format_ident!("__shadowed");
     let initialize_from_shadow = initialize_from_shadow(
-        input.data,
+        &input.data,
         &format_ident!("Self"),
         &shadow_binding,
         shadow_struct_ident,
     );
+
+    let deser_generics = ImplDeserGenerics::new(&input);
+    let (impl_generics, ty_generics, where_clause) = deser_generics.split_for_impl();
+
     let expanded = quote! {
         const _: () = {
             #[derive(::eserde::_serde::Deserialize)]
@@ -33,7 +38,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
             #shadow_type
 
             #[automatically_derived]
-            impl<'de> ::eserde::_serde::Deserialize<'de> for #name {
+            impl #impl_generics ::eserde::_serde::Deserialize<'de> for #name #ty_generics #where_clause {
                 fn deserialize<__D>(__deserializer: __D) -> Result<Self, __D::Error>
                 where
                     __D: ::eserde::_serde::Deserializer<'de>,
@@ -48,10 +53,61 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+struct ImplDeserGenerics<'a> {
+    deser_generics: Generics,
+    input_generics: &'a Generics,
+}
+
+impl<'a> ImplDeserGenerics<'a> {
+    fn new(input: &'a DeriveInput) -> ImplDeserGenerics<'a> {
+        let mut deser_generics = input.generics.clone();
+        deser_generics.make_where_clause();
+        if let Some(where_clause) = &mut deser_generics.where_clause {
+            // Each type parameter must implement `Deserialize` for the
+            // type to implement `Deserialize`.
+            //
+            // TODO: Take into account the `#[serde(bound)]` attribute https://serde.rs/container-attrs.html#bound
+            for ty_param in input.generics.type_params() {
+                where_clause
+                    .predicates
+                    .push(syn::parse_quote! { #ty_param: ::eserde::_serde::Deserialize<'de> });
+            }
+        } else {
+            unreachable!()
+        }
+
+        // The `'de` lifetime of the `Deserialize` trait.
+        // There is no way to add a lifetime to the `impl_generics` returned by `split_for_impl`, so we
+        // have to create a new set of generics with the lifetime added and then split again.
+        let param = GenericParam::Lifetime(syn::LifetimeParam::new(Lifetime::new(
+            "'de",
+            Span::call_site(),
+        )));
+        deser_generics.params.push(param);
+
+        Self {
+            deser_generics,
+            input_generics: &input.generics,
+        }
+    }
+
+    fn split_for_impl(
+        &self,
+    ) -> (
+        syn::ImplGenerics<'_>,
+        syn::TypeGenerics,
+        Option<&syn::WhereClause>,
+    ) {
+        let (impl_generics, _, where_clause) = self.deser_generics.split_for_impl();
+        let (_, ty_generics, _) = self.input_generics.split_for_impl();
+        (impl_generics, ty_generics, where_clause)
+    }
+}
+
 /// Initialize the target type from the shadow type, assigning each field from the shadow type to the
 /// corresponding field on the target type.
 fn initialize_from_shadow(
-    input: Data,
+    input: &Data,
     type_ident: &syn::Ident,
     shadow_binding: &syn::Ident,
     shadow_type_ident: &syn::Ident,
