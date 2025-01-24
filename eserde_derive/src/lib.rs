@@ -42,10 +42,9 @@ fn initialize_from_shadow(
 ) -> proc_macro2::TokenStream {
     match input {
         Data::Struct(data) => {
-            let fields = data.fields.iter().map(|field| {
-                let field_name = &field.ident;
+            let fields = data.fields.members().map(|field| {
                 quote! {
-                    #field_name: #shadow_binding.#field_name
+                    #field: #shadow_binding.#field
                 }
             });
             quote! {
