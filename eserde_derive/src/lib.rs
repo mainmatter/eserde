@@ -8,6 +8,13 @@ mod model;
 #[proc_macro_derive(Deserialize, attributes(serde))]
 pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+
+    if matches!(input.data, Data::Union(_)) {
+        return syn::Error::new_spanned(input, "Unions are not supported")
+            .to_compile_error()
+            .into();
+    }
+
     let name = &input.ident;
     let shadow_type = model::ShadowType::new(format_ident!("__ImplDeserializeFor{}", name), &input);
     let shadow_struct_ident = &shadow_type.0.ident;
@@ -101,6 +108,6 @@ fn initialize_from_shadow(
                 }
             }
         }
-        Data::Union(_) => unimplemented!("Unions are not supported"),
+        Data::Union(_) => unimplemented!(),
     }
 }
