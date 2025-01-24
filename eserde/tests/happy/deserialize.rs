@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 #[derive(eserde::Deserialize)]
 struct NamedStruct {
     #[serde(default)]
