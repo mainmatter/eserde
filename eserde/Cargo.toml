@@ -12,3 +12,4 @@ derive = ["serde/derive"]
 [dependencies]
 serde = { workspace = true }
 eserde_derive = { path = "../eserde_derive" }
+serde_json = { workspace = true }
