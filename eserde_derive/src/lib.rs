@@ -25,6 +25,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
             #[serde(crate = "eserde::_serde")]
             #shadow_type
 
+            #[automatically_derived]
             impl<'de> ::eserde::_serde::Deserialize<'de> for #name {
                 fn deserialize<__D>(__deserializer: __D) -> Result<Self, __D::Error>
                 where
