@@ -6,7 +6,7 @@ pub enum MaybeInvalidOrMissing<T> {
 }
 
 impl<T> MaybeInvalidOrMissing<T> {
-    pub fn error<'de, D>(&self) -> Option<D::Error>
+    pub fn error<'de, D>(&self, field_name: &'static str) -> Option<D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -15,7 +15,7 @@ impl<T> MaybeInvalidOrMissing<T> {
         match self {
             Self::Valid(_) => None,
             Self::Invalid(e) => Some(D::Error::custom(e)),
-            Self::Missing => Some(D::Error::missing_field("This field is missing")),
+            Self::Missing => Some(D::Error::missing_field(field_name)),
         }
     }
 
@@ -64,7 +64,7 @@ where
 }
 
 impl<T> MaybeInvalid<T> {
-    pub fn error<'de, D>(&self) -> Option<D::Error>
+    pub fn error<'de, D>(&self, _field_name: &'static str) -> Option<D::Error>
     where
         D: serde::Deserializer<'de>,
     {

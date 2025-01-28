@@ -222,25 +222,29 @@ fn initialize_from_companion(
     match input {
         Data::Struct(data) => match &data.fields {
             syn::Fields::Named(fields) => {
-                let field_names = fields
-                    .named
-                    .iter()
-                    .map(|field| field.ident.as_ref().unwrap());
-                let fields = data.fields.members().map(|field| {
+                let assign = fields.named.iter().map(|field| {
+                    let field = field.ident.as_ref().unwrap();
                     quote! {
                         #field: #companion_binding.#field.value().unwrap()
                     }
                 });
+                let accumulate = fields.named.iter().map(|field| {
+                    let field = field.ident.as_ref().unwrap();
+                    let field_str = field.to_string();
+                    quote! {
+                        if let Some(err) = #companion_binding.#field.error::<#deserializer_type>(#field_str) {
+                            #errors.push(err);
+                        }
+                    }
+                });
                 quote! {
                     let mut #errors = ::std::vec::Vec::new();
-                    #(if let Some(err) = #companion_binding.#field_names.error::<#deserializer_type>() {
-                        #errors.push(err);
-                    })*
+                    #(#accumulate)*
                     if !#errors.is_empty() {
                         return Err(#errors);
                     }
                     Ok(#type_ident {
-                        #(#fields),*
+                        #(#assign),*
                     })
                 }
             }
