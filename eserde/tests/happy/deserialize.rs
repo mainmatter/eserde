@@ -9,8 +9,20 @@ struct NamedStruct {
 }
 
 #[derive(eserde::Deserialize)]
-struct GenericStruct<T> {
+struct GenericStruct<T, S> {
     a: T,
+    b: S,
+}
+
+#[derive(eserde::Deserialize)]
+struct LifetimeGenericStruct<'a> {
+    a: &'a str,
+}
+
+#[derive(eserde::Deserialize)]
+struct LifetimeAndGenericStruct<'a, T> {
+    a: &'a str,
+    b: T,
 }
 
 #[derive(eserde::Deserialize)]

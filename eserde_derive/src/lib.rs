@@ -72,6 +72,13 @@ impl<'a> ImplDeserGenerics<'a> {
                     .predicates
                     .push(syn::parse_quote! { #ty_param: ::eserde::_serde::Deserialize<'de> });
             }
+
+            // Each lifetime parameter must be outlived by `'de`, the lifetime of the `Deserialize` trait.
+            for lifetime in input.generics.lifetimes() {
+                where_clause
+                    .predicates
+                    .push(syn::parse_quote! { 'de: #lifetime });
+            }
         } else {
             unreachable!()
         }
