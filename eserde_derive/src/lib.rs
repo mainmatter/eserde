@@ -28,6 +28,22 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
         shadow_struct_ident,
     );
 
+    let companion_type = model::PermissiveCompanionType::new(
+        format_ident!("__ImplHumanDeserializeFor{}", name),
+        &input,
+    );
+    let companion_struct_ident = &companion_type.0.ident;
+    let companion_binding = format_ident!("__companion");
+    let errors_ident = format_ident!("__errors");
+    let deserializer_generic_ident = format_ident!("__D");
+    let initialize_from_companion = initialize_from_companion(
+        &input.data,
+        &errors_ident,
+        &format_ident!("Self"),
+        &companion_binding,
+        &deserializer_generic_ident,
+    );
+
     let deser_generics = ImplDeserGenerics::new(&input);
     let (impl_generics, ty_generics, where_clause) = deser_generics.split_for_impl();
 
@@ -35,10 +51,29 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
         const _: () = {
             #[derive(::eserde::_serde::Deserialize)]
             #[serde(crate = "eserde::_serde")]
+            #companion_type
+
+            #[derive(::eserde::_serde::Deserialize)]
+            #[serde(crate = "eserde::_serde")]
             #shadow_type
 
             #[automatically_derived]
-            impl #impl_generics ::eserde::_serde::Deserialize<'de> for #name #ty_generics #where_clause {
+            impl #impl_generics ::eserde::HumanDeserialize<'de> for #name #ty_generics
+            #where_clause
+            {
+                fn human_deserialize<#deserializer_generic_ident>(__deserializer: #deserializer_generic_ident) -> Result<Self, Vec<#deserializer_generic_ident::Error>>
+                where
+                    #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
+                {
+                    let #companion_binding = <#companion_struct_ident as ::eserde::_serde::Deserialize>::deserialize(__deserializer).map_err(|e| ::std::vec![e])?;
+                    #initialize_from_companion
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics ::eserde::_serde::Deserialize<'de> for #name #ty_generics
+            #where_clause
+            {
                 fn deserialize<__D>(__deserializer: __D) -> Result<Self, __D::Error>
                 where
                     __D: ::eserde::_serde::Deserializer<'de>,
@@ -172,5 +207,45 @@ fn initialize_from_shadow(
             }
         }
         Data::Union(_) => unimplemented!(),
+    }
+}
+
+/// Initialize the target type from the companion type, assigning each field from the shadow companion to the
+/// corresponding field on the target type in case of success, otherwise accumulating errors.
+fn initialize_from_companion(
+    input: &Data,
+    errors: &syn::Ident,
+    type_ident: &syn::Ident,
+    companion_binding: &syn::Ident,
+    deserializer_type: &syn::Ident,
+) -> proc_macro2::TokenStream {
+    match input {
+        Data::Struct(data) => match &data.fields {
+            syn::Fields::Named(fields) => {
+                let field_names = fields
+                    .named
+                    .iter()
+                    .map(|field| field.ident.as_ref().unwrap());
+                let fields = data.fields.members().map(|field| {
+                    quote! {
+                        #field: #companion_binding.#field.value().unwrap()
+                    }
+                });
+                quote! {
+                    let mut #errors = ::std::vec::Vec::new();
+                    #(if let Some(err) = #companion_binding.#field_names.error::<#deserializer_type>() {
+                        #errors.push(err);
+                    })*
+                    if !#errors.is_empty() {
+                        return Err(#errors);
+                    }
+                    Ok(#type_ident {
+                        #(#fields),*
+                    })
+                }
+            }
+            syn::Fields::Unnamed(_) | syn::Fields::Unit => unimplemented!(),
+        },
+        Data::Enum(_) | Data::Union(_) => unimplemented!(),
     }
 }

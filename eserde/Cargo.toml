@@ -8,8 +8,14 @@ repository.workspace = true
 [features]
 default = ["derive"]
 derive = ["serde/derive"]
+json = ["dep:serde_json"]
 
 [dependencies]
 serde = { workspace = true }
 eserde_derive = { path = "../eserde_derive" }
-serde_json = { workspace = true }
+serde_json = { workspace = true, optional = true }
+
+[dev-dependencies]
+eserde = { path = ".", features = ["json"] }
+insta = "1.42.1"
+itertools = "0.14"

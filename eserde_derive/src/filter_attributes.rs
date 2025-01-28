@@ -41,7 +41,7 @@ impl FilterAttributes for syn::DataEnum {
 impl FilterAttributes for syn::Variant {
     fn filter_attributes(&self, filter: impl Fn(&syn::Attribute) -> bool) -> Self {
         syn::Variant {
-            attrs: self.attrs.iter().filter(|a| filter(a)).cloned().collect(),
+            attrs: self.attrs.filter_attributes(&filter),
             fields: self.fields.filter_attributes(&filter),
             ..self.clone()
         }
@@ -63,12 +63,9 @@ impl FilterAttributes for syn::FieldsNamed {
         let named = self
             .named
             .iter()
-            .map(|field| {
-                let attrs = field.attrs.iter().filter(|f| filter(f)).cloned().collect();
-                syn::Field {
-                    attrs,
-                    ..field.clone()
-                }
+            .map(|field| syn::Field {
+                attrs: field.attrs.filter_attributes(&filter),
+                ..field.clone()
             })
             .collect();
         Self {
@@ -83,17 +80,20 @@ impl FilterAttributes for syn::FieldsUnnamed {
         let unnamed = self
             .unnamed
             .iter()
-            .map(|field| {
-                let attrs = field.attrs.iter().filter(|f| filter(f)).cloned().collect();
-                syn::Field {
-                    attrs,
-                    ..field.clone()
-                }
+            .map(|field| syn::Field {
+                attrs: field.attrs.filter_attributes(&filter),
+                ..field.clone()
             })
             .collect();
         Self {
             unnamed,
             paren_token: self.paren_token,
         }
+    }
+}
+
+impl FilterAttributes for Vec<syn::Attribute> {
+    fn filter_attributes(&self, filter: impl Fn(&syn::Attribute) -> bool) -> Self {
+        self.iter().filter(|a| filter(a)).cloned().collect()
     }
 }
