@@ -7,20 +7,18 @@ use syn::DeriveInput;
 /// we would get for the original type had we annotated it with `#[derive(Deserialize)]` directly.
 pub struct ShadowType(pub DeriveInput);
 
+fn keep_serde_attributes(attr: &syn::Attribute) -> bool {
+    attr.meta.path().is_ident("serde")
+}
+
 impl ShadowType {
     pub fn new(ident: syn::Ident, input: &syn::DeriveInput) -> Self {
-        fn keep_serde_attributes(attr: &syn::Attribute) -> bool {
-            attr.meta.path().is_ident("serde")
-        }
-
         let shadow = DeriveInput {
             vis: syn::Visibility::Inherited,
             ident,
-            generics: input.generics.clone(),
             // We don't want to keep _all_ attributes for the shadow type, only the `serde` ones
             // (e.g. `#[serde(default)]`), so we filter out the others.
-            attrs: input.attrs.filter_attributes(keep_serde_attributes),
-            data: input.data.filter_attributes(keep_serde_attributes),
+            ..input.filter_attributes(keep_serde_attributes)
         };
         Self(shadow)
     }
@@ -40,13 +38,14 @@ pub struct PermissiveCompanionType(pub DeriveInput);
 
 impl PermissiveCompanionType {
     pub fn new(ident: syn::Ident, input: &syn::DeriveInput) -> Self {
-        fn keep_serde_attributes(attr: &syn::Attribute) -> bool {
-            attr.meta.path().is_ident("serde")
-        }
+        let mut companion = DeriveInput {
+            vis: syn::Visibility::Inherited,
+            ident,
+            generics: input.generics.clone(),
+            ..input.filter_attributes(keep_serde_attributes)
+        };
 
-        let mut data = input.data.filter_attributes(keep_serde_attributes);
-
-        match &mut data {
+        match &mut companion.data {
             syn::Data::Struct(data_struct) => {
                 match &mut data_struct.fields {
                     syn::Fields::Named(fields_named) => {
@@ -105,16 +104,6 @@ impl PermissiveCompanionType {
                 };
             }
             syn::Data::Enum(_) | syn::Data::Union(_) => unimplemented!(),
-        };
-
-        let companion = DeriveInput {
-            vis: syn::Visibility::Inherited,
-            ident,
-            generics: input.generics.clone(),
-            // We don't want to keep _all_ attributes for the shadow type, only the `serde` ones
-            // (e.g. `#[serde(default)]`), so we filter out the others.
-            attrs: input.attrs.filter_attributes(keep_serde_attributes),
-            data,
         };
         Self(companion)
     }

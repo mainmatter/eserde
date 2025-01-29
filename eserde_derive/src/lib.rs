@@ -2,18 +2,18 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, Data, DeriveInput, GenericParam, Generics, Lifetime};
+use unsupported::reject_unsupported_inputs;
 
 mod filter_attributes;
 mod model;
+mod unsupported;
 
 #[proc_macro_derive(Deserialize, attributes(serde))]
 pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    if matches!(input.data, Data::Union(_)) {
-        return syn::Error::new_spanned(input, "Unions are not supported")
-            .to_compile_error()
-            .into();
+    if let Err(e) = reject_unsupported_inputs(&input) {
+        return e.into_compile_error().into();
     }
 
     let name = &input.ident;

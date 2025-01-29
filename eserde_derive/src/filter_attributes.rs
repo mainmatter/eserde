@@ -3,6 +3,18 @@ pub(crate) trait FilterAttributes {
     fn filter_attributes(&self, filter: impl Fn(&syn::Attribute) -> bool) -> Self;
 }
 
+impl FilterAttributes for syn::DeriveInput {
+    fn filter_attributes(&self, filter: impl Fn(&syn::Attribute) -> bool) -> Self {
+        Self {
+            vis: self.vis.clone(),
+            ident: self.ident.clone(),
+            generics: self.generics.clone(),
+            attrs: self.attrs.filter_attributes(&filter),
+            data: self.data.filter_attributes(filter),
+        }
+    }
+}
+
 impl FilterAttributes for syn::Data {
     fn filter_attributes(&self, filter: impl Fn(&syn::Attribute) -> bool) -> Self {
         match self {
