@@ -18,21 +18,21 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
 
     let name = &input.ident;
     let shadow_type = model::ShadowType::new(format_ident!("__ImplDeserializeFor{}", name), &input);
-    let shadow_struct_ident = &shadow_type.0.ident;
+    let shadow_type_ident = &shadow_type.0.ident;
 
     let shadow_binding = format_ident!("__shadowed");
     let initialize_from_shadow = initialize_from_shadow(
         &input.data,
         &format_ident!("Self"),
         &shadow_binding,
-        shadow_struct_ident,
+        shadow_type_ident,
     );
 
     let companion_type = model::PermissiveCompanionType::new(
         format_ident!("__ImplHumanDeserializeFor{}", name),
         &input,
     );
-    let companion_struct_ident = &companion_type.0.ident;
+    let compation_type_ident = &companion_type.0.ident;
     let companion_binding = format_ident!("__companion");
     let errors_ident = format_ident!("__errors");
     let deserializer_generic_ident = format_ident!("__D");
@@ -40,6 +40,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
         &input.data,
         &errors_ident,
         &format_ident!("Self"),
+        &compation_type_ident,
         &companion_binding,
         &deserializer_generic_ident,
     );
@@ -65,7 +66,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
                 where
                     #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
                 {
-                    let #companion_binding = <#companion_struct_ident as ::eserde::_serde::Deserialize>::deserialize(__deserializer).map_err(|e| ::std::vec![e])?;
+                    let #companion_binding = <#compation_type_ident as ::eserde::_serde::Deserialize>::deserialize(__deserializer).map_err(|e| ::std::vec![e])?;
                     #initialize_from_companion
                 }
             }
@@ -78,7 +79,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
                 where
                     __D: ::eserde::_serde::Deserializer<'de>,
                 {
-                    let #shadow_binding = #shadow_struct_ident::deserialize(__deserializer)?;
+                    let #shadow_binding = #shadow_type_ident::deserialize(__deserializer)?;
                     Ok(#initialize_from_shadow)
                 }
             }
@@ -216,6 +217,7 @@ fn initialize_from_companion(
     input: &Data,
     errors: &syn::Ident,
     type_ident: &syn::Ident,
+    companion_type: &syn::Ident,
     companion_binding: &syn::Ident,
     deserializer_type: &syn::Ident,
 ) -> proc_macro2::TokenStream {
@@ -249,6 +251,73 @@ fn initialize_from_companion(
                 })
             }
         }
-        Data::Enum(_) | Data::Union(_) => unimplemented!(),
+        Data::Enum(e) => {
+            let variants = e.variants.iter().map(|variant| {
+                let variant_ident = &variant.ident;
+
+                if matches!(variant.fields, syn::Fields::Unit) {
+                    return quote! {
+                        #companion_type::#variant_ident => #type_ident::#variant_ident
+                    };
+                }
+                let bindings: Vec<_> = variant
+                    .fields
+                    .members()
+                    .enumerate()
+                    .map(|(i, _)| format_ident!("__v{}", i))
+                    .collect();
+                let destructure =
+                    variant
+                        .fields
+                        .members()
+                        .zip(bindings.iter())
+                        .map(|(field, v)| {
+                            quote! {
+                                #field: #v
+                            }
+                        });
+                let assign = variant
+                    .fields
+                    .members()
+                    .zip(bindings.iter())
+                    .map(|(field, v)| {
+                        quote! {
+                            #field: #v.value().unwrap()
+                        }
+                    });
+                let accumulate = variant
+                    .fields
+                    .members()
+                    .zip(bindings.iter())
+                    .map(|(field, v)| {
+                        let field_str = match &field {
+                            syn::Member::Named(ident) => ident.to_string(),
+                            // TODO: Improve naming for unnamed fields
+                            syn::Member::Unnamed(index) => format!("{}", index.index),
+                        };
+                        quote! {
+                            if let Some(err) = #v.error::<#deserializer_type>(#field_str) {
+                                #errors.push(err);
+                            }
+                        }
+                    });
+                quote! {
+                    #companion_type::#variant_ident { #(#destructure),* } => {
+                        let mut #errors = ::std::vec::Vec::new();
+                        #(#accumulate)*
+                        if !#errors.is_empty() {
+                            return Err(#errors);
+                        }
+                        #type_ident::#variant_ident { #(#assign),* }
+                    }
+                }
+            });
+            quote! {
+                Ok(match #companion_binding {
+                    #(#variants),*
+                })
+            }
+        }
+        Data::Union(_) => unreachable!(),
     }
 }
