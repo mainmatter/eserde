@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use itertools::Itertools;
+use std::borrow::Cow;
 
 #[derive(eserde::Deserialize)]
 struct NamedStruct {
@@ -17,14 +18,17 @@ struct GenericStruct<T, S> {
 }
 
 #[derive(eserde::Deserialize)]
-struct LifetimeGenericStruct<'a> {
-    a: &'a str,
-}
-
-#[derive(eserde::Deserialize)]
-struct LifetimeAndGenericStruct<'a, T> {
-    a: &'a str,
-    b: T,
+struct LifetimeGenericStruct<'a, 'b, 'c, 'd, 'e> {
+    #[serde(borrow)]
+    a: Cow<'a, str>,
+    // `&str` and `&[u8]` are special-cased by `serde`
+    // and treated as if `#[serde(borrow)]` was applied.
+    b: &'b str,
+    c: &'c [u8],
+    d: Cow<'d, str>,
+    // Check that we don't add `borrow` twice, angering `serde`
+    #[serde(borrow)]
+    e: &'e str,
 }
 
 #[derive(eserde::Deserialize)]
