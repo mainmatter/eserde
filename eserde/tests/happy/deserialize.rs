@@ -10,11 +10,11 @@ struct NamedStruct {
     c: Vec<TupleStructMultipleFields>,
 }
 
-// #[derive(eserde::Deserialize)]
-// struct GenericStruct<T, S> {
-//     a: T,
-//     b: S,
-// }
+#[derive(eserde::Deserialize)]
+struct GenericStruct<T, S> {
+    a: T,
+    b: S,
+}
 
 // #[derive(eserde::Deserialize)]
 // struct LifetimeGenericStruct<'a> {

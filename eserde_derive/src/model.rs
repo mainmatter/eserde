@@ -103,6 +103,25 @@ impl PermissiveCompanionType {
             ..input.filter_attributes(keep_serde_attributes)
         };
 
+        // `serde` will infer that the type parameters of the companion type must implement
+        // the `Default` trait, on top of the `Deserialize` trait, since we marked fields
+        // that use those type parameters with `#[serde(default)]`.
+        // That's unnecessary, so we override the bounds here using `#[serde(bound(deserialize = "..."))]`.
+        let bounds: Vec<String> = companion
+            .generics
+            .type_params()
+            .map(|param| format!("{}: ::eserde::_serde::Deserialize<'de>", param.ident))
+            .collect();
+        if !bounds.is_empty() {
+            let bound = bounds.join(", ");
+            // TODO: when we start supporting `serde(bound = "...")`, we'll have to
+            // concatenate the new bound with the existing ones otherwise `serde`
+            // will complain about duplicate attributes.
+            companion
+                .attrs
+                .push(syn::parse_quote!(#[serde(bound(deserialize = #bound))]));
+        }
+
         match &mut companion.data {
             syn::Data::Struct(data_struct) => {
                 modify_field_types(&mut data_struct.fields);

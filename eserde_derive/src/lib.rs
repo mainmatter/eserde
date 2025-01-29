@@ -32,7 +32,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
         format_ident!("__ImplHumanDeserializeFor{}", name),
         &input,
     );
-    let compation_type_ident = &companion_type.0.ident;
+    let companion_type_ident = &companion_type.0.ident;
     let companion_binding = format_ident!("__companion");
     let errors_ident = format_ident!("__errors");
     let deserializer_generic_ident = format_ident!("__D");
@@ -40,7 +40,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
         &input.data,
         &errors_ident,
         &format_ident!("Self"),
-        &compation_type_ident,
+        &companion_type_ident,
         &companion_binding,
         &deserializer_generic_ident,
     );
@@ -66,7 +66,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
                 where
                     #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
                 {
-                    let #companion_binding = <#compation_type_ident as ::eserde::_serde::Deserialize>::deserialize(__deserializer).map_err(|e| ::std::vec![e])?;
+                    let #companion_binding = <#companion_type_ident #ty_generics as ::eserde::_serde::Deserialize>::deserialize(__deserializer).map_err(|e| ::std::vec![e])?;
                     #initialize_from_companion
                 }
             }
