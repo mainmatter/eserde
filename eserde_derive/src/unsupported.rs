@@ -6,12 +6,29 @@ use crate::filter_attributes::FilterAttributes;
 /// `serde` attributes that are not supported by our custom derive.
 pub fn reject_unsupported_inputs(input: &DeriveInput) -> Result<(), syn::Error> {
     let mut errors = Vec::new();
-    if matches!(input.data, syn::Data::Union(_)) {
-        errors.push(syn::Error::new_spanned(input, "Unions are not supported"));
-    }
 
     let input = input.filter_attributes(|a| a.meta.path().is_ident("serde"));
     reject_container_attributes(&mut errors, &input.attrs);
+
+    match &input.data {
+        syn::Data::Struct(data_struct) => {
+            data_struct.fields.iter().for_each(|field| {
+                reject_field_attributes(&mut errors, field);
+            });
+        }
+        syn::Data::Enum(data_enum) => {
+            data_enum.variants.iter().for_each(|variant| {
+                reject_variant_attributes(&mut errors, variant);
+
+                variant.fields.iter().for_each(|field| {
+                    reject_field_attributes(&mut errors, field);
+                });
+            });
+        }
+        syn::Data::Union(_) => {
+            errors.push(syn::Error::new_spanned(&input, "Unions are not supported"));
+        }
+    }
 
     if let Some(first_error) = errors.pop() {
         let error = errors.into_iter().fold(first_error, |mut acc, e| {
@@ -38,48 +55,70 @@ fn reject_container_attributes(errors: &mut Vec<syn::Error>, attrs: &[syn::Attri
         ));
     }
 
-    if let Some(attr) = find_serde_path_attr(&attrs, "default") {
-        errors.push(syn::Error::new_spanned(
-            attr,
-            "`eserde::Deserialize` doesn't yet support the `#[serde(default)]` attribute \
-            on structs. It is only supported on fields.",
-        ));
+    for (path, example, additional) in [
+        (
+            "default",
+            "`#[serde(default)]`",
+            " It is only supported on fields.",
+        ),
+        (
+            "remote",
+            "`#[serde(remote  = \"..\")]`",
+            " It can only be derived for local types.",
+        ),
+        ("try_from", "`#[serde(try_from = \"..\")]`", ""),
+        ("from", "`#[serde(from = \"..\")]`", ""),
+        ("bound", "`#[serde(bound = \"..\")]`", ""),
+        ("variant_identifier", "`#[serde(variant_identifier)]`", ""),
+        ("field_identifier", "`#[serde(field_identifier)]`", ""),
+    ] {
+        if let Some(attr) = find_serde_path_attr(&attrs, path) {
+            errors.push(syn::Error::new_spanned(
+                attr,
+                format!("`eserde::Deserialize` doesn't yet support the {example} attribute.{additional}",
+            )));
+        }
     }
+}
 
-    if let Some(attr) = find_serde_path_attr(&attrs, "remote") {
-        errors.push(syn::Error::new_spanned(
-            attr,
-            "`eserde::Deserialize` doesn't yet support the `#[serde(remote = \"..\")]` attribute. \
-            It can only be derived for local types.",
-        ));
+/// Attributes from <https://serde.rs/field-attrs.html> that we either
+/// can't support or haven't implemented yet.
+fn reject_field_attributes(errors: &mut Vec<syn::Error>, field: &syn::Field) {
+    for (path, example) in [
+        ("skip_deserializing", "`#[serde(skip_deserializing)]`"),
+        ("deserialize_with", "`#[serde(deserialize_with = \"..\")]`"),
+        ("with", "`#[serde(with = \"..\")]`"),
+        ("bound", "`#[serde(bound = \"..\")]`"),
+    ] {
+        if find_serde_path_attr(&field.attrs, path).is_some() {
+            errors.push(syn::Error::new_spanned(
+                field,
+                format!(
+                    "`eserde::Deserialize` doesn't yet support the {example} attribute on fields."
+                ),
+            ));
+        }
     }
+}
 
-    if let Some(attr) = find_serde_path_attr(&attrs, "from") {
-        errors.push(syn::Error::new_spanned(
-            attr,
-            "`eserde::Deserialize` doesn't yet support the `#[serde(from = \"..\")]` attribute.",
-        ));
-    }
-
-    if let Some(attr) = find_serde_path_attr(&attrs, "try_from") {
-        errors.push(syn::Error::new_spanned(
-            attr,
-            "`eserde::Deserialize` doesn't yet support the `#[serde(try_from = \"..\")]` attribute.",
-        ));
-    }
-
-    if let Some(attr) = find_serde_path_attr(&attrs, "variant_identifier") {
-        errors.push(syn::Error::new_spanned(
-            attr,
-            "`eserde::Deserialize` doesn't yet support the `#[serde(variant_identifier)]` attribute.",
-        ));
-    }
-
-    if let Some(attr) = find_serde_path_attr(&attrs, "field_identifier") {
-        errors.push(syn::Error::new_spanned(
-            attr,
-            "`eserde::Deserialize` doesn't yet support the `#[serde(field_identifier)]` attribute.",
-        ));
+/// Attributes from <https://serde.rs/variant-attrs.html> that we either
+/// can't support or haven't implemented yet.
+fn reject_variant_attributes(errors: &mut Vec<syn::Error>, variant: &syn::Variant) {
+    for (path, example) in [
+        ("skip_deserializing", "`#[serde(skip_deserializing)]`"),
+        ("deserialize_with", "`#[serde(deserialize_with = \"..\")]`"),
+        ("with", "`#[serde(with = \"..\")]`"),
+        ("bound", "`#[serde(bound = \"..\")]`"),
+        ("untagged", "`#[serde(untagged)]`"),
+    ] {
+        if find_serde_path_attr(&variant.attrs, path).is_some() {
+            errors.push(syn::Error::new_spanned(
+                variant,
+                format!(
+                    "`eserde::Deserialize` doesn't yet support the {example} attribute on enum variants."
+                ),
+            ));
+        }
     }
 }
 
