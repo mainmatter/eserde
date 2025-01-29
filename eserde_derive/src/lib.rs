@@ -220,36 +220,35 @@ fn initialize_from_companion(
     deserializer_type: &syn::Ident,
 ) -> proc_macro2::TokenStream {
     match input {
-        Data::Struct(data) => match &data.fields {
-            syn::Fields::Named(fields) => {
-                let assign = fields.named.iter().map(|field| {
-                    let field = field.ident.as_ref().unwrap();
-                    quote! {
-                        #field: #companion_binding.#field.value().unwrap()
-                    }
-                });
-                let accumulate = fields.named.iter().map(|field| {
-                    let field = field.ident.as_ref().unwrap();
-                    let field_str = field.to_string();
-                    quote! {
-                        if let Some(err) = #companion_binding.#field.error::<#deserializer_type>(#field_str) {
-                            #errors.push(err);
-                        }
-                    }
-                });
+        Data::Struct(data) => {
+            let assign = data.fields.members().map(|field| {
                 quote! {
-                    let mut #errors = ::std::vec::Vec::new();
-                    #(#accumulate)*
-                    if !#errors.is_empty() {
-                        return Err(#errors);
-                    }
-                    Ok(#type_ident {
-                        #(#assign),*
-                    })
+                    #field: #companion_binding.#field.value().unwrap()
                 }
+            });
+            let accumulate = data.fields.members().map(|field| {
+                let field_str = match &field {
+                    syn::Member::Named(ident) => ident.to_string(),
+                    // TODO: Improve naming for unnamed fields
+                    syn::Member::Unnamed(index) => format!("{}", index.index)
+                };
+                quote! {
+                    if let Some(err) = #companion_binding.#field.error::<#deserializer_type>(#field_str) {
+                        #errors.push(err);
+                    }
+                }
+            });
+            quote! {
+                let mut #errors = ::std::vec::Vec::new();
+                #(#accumulate)*
+                if !#errors.is_empty() {
+                    return Err(#errors);
+                }
+                Ok(#type_ident {
+                    #(#assign),*
+                })
             }
-            syn::Fields::Unnamed(_) | syn::Fields::Unit => unimplemented!(),
-        },
+        }
         Data::Enum(_) | Data::Union(_) => unimplemented!(),
     }
 }

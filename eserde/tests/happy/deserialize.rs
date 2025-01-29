@@ -2,13 +2,13 @@
 
 use itertools::Itertools;
 
-// #[derive(eserde::Deserialize)]
-// struct NamedStruct {
-//     #[serde(default)]
-//     a: Option<u32>,
-//     b: TupleStructOneField,
-//     c: Vec<TupleStructMultipleFields>,
-// }
+#[derive(eserde::Deserialize)]
+struct NamedStruct {
+    #[serde(default)]
+    a: Option<u32>,
+    b: TupleStructOneField,
+    c: Vec<TupleStructMultipleFields>,
+}
 
 // #[derive(eserde::Deserialize)]
 // struct GenericStruct<T, S> {
@@ -27,11 +27,11 @@ use itertools::Itertools;
 //     b: T,
 // }
 
-// #[derive(eserde::Deserialize)]
-// struct TupleStructOneField(#[serde(default)] Option<u32>);
+#[derive(eserde::Deserialize)]
+struct TupleStructOneField(#[serde(default)] Option<u32>);
 
-// #[derive(eserde::Deserialize)]
-// struct TupleStructMultipleFields(Option<u32>, u32, #[serde(default)] u64);
+#[derive(eserde::Deserialize)]
+struct TupleStructMultipleFields(Option<u32>, u32, #[serde(default)] u64);
 
 // #[derive(eserde::Deserialize)]
 // enum CLikeEnumOneVariant {
@@ -86,20 +86,20 @@ fn human_deserialize() {
     }
 
     let payload = r#"{
-            "a": -5,
-            "c": 8
-        }"#;
+    "a": -5,
+    "c": 8
+}"#;
 
     let value = eserde::json::from_str::<FlatStruct>(payload);
     let error = value.unwrap_err();
     let error_repr = error.into_iter().map(|e| e.to_string()).join("\n");
     insta::assert_snapshot!(error_repr, @r###"
-    invalid value: integer `-5`, expected u32 at line 2 column 19
+    invalid value: integer `-5`, expected u32 at line 2 column 11
     missing field `b`
-    invalid type: integer `8`, expected a string at line 3 column 18
+    invalid type: integer `8`, expected a string at line 3 column 10
     "###);
 
     let value = serde_json::from_str::<FlatStruct>(payload);
     let error_repr = value.unwrap_err().to_string();
-    insta::assert_snapshot!(error_repr, @"invalid value: integer `-5`, expected u32 at line 2 column 19");
+    insta::assert_snapshot!(error_repr, @"invalid value: integer `-5`, expected u32 at line 2 column 11");
 }

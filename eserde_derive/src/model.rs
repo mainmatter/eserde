@@ -52,22 +52,10 @@ impl PermissiveCompanionType {
                     syn::Fields::Named(fields_named) => {
                         for field in fields_named.named.iter_mut() {
                             // Check if `#[serde(default)]` is already present on the field.
-                            let has_default = field.attrs.iter().any(|attr| {
-                                let mut has_default = false;
-                                if attr.path().is_ident("serde") {
-                                    let _ = attr.parse_nested_meta(|meta| {
-                                        if meta.path.is_ident("default") {
-                                            has_default = true;
-                                        }
-                                        Ok(())
-                                    });
-                                }
-                                has_default
-                            });
                             // TODO: handle the `#[serde(default = "..")]` case.
                             //   We'll have to generate a function that wraps around the
                             //   one specified in the attribute.
-                            if !has_default {
+                            if !has_serde_default(&field.attrs) {
                                 let ty_ = &field.ty;
                                 let ty_: syn::Type = syn::parse2(quote! {
                                     ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
@@ -86,7 +74,34 @@ impl PermissiveCompanionType {
                             }
                         }
                     }
-                    syn::Fields::Unnamed(_) | syn::Fields::Unit => unimplemented!(),
+                    syn::Fields::Unnamed(fields_unnamed) => {
+                        let n_fields = fields_unnamed.unnamed.len();
+                        for (i, field) in fields_unnamed.unnamed.iter_mut().enumerate() {
+                            // Check if `#[serde(default)]` is already present on the field.
+                            // TODO: handle the `#[serde(default = "..")]` case.
+                            //   We'll have to generate a function that wraps around the
+                            //   one specified in the attribute.
+                            let is_last_field = i == n_fields - 1;
+                            if !has_serde_default(&field.attrs) && is_last_field {
+                                let ty_ = &field.ty;
+                                let ty_: syn::Type = syn::parse2(quote! {
+                                    ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
+                                })
+                                .unwrap();
+                                field.ty = ty_;
+                                // Add `#[serde(default)]` to the list:
+                                field.attrs.push(syn::parse_quote!(#[serde(default)]));
+                            } else {
+                                let ty_ = &field.ty;
+                                let ty_: syn::Type = syn::parse2(quote! {
+                                    ::eserde::_macro_impl::MaybeInvalid<#ty_>
+                                })
+                                .unwrap();
+                                field.ty = ty_;
+                            }
+                        }
+                    }
+                    syn::Fields::Unit => unimplemented!(),
                 };
             }
             syn::Data::Enum(_) | syn::Data::Union(_) => unimplemented!(),
@@ -103,6 +118,22 @@ impl PermissiveCompanionType {
         };
         Self(companion)
     }
+}
+
+/// Check if the field has a `#[serde(default)]` attribute attached to it.
+fn has_serde_default(attrs: &[syn::Attribute]) -> bool {
+    attrs.iter().any(|attr| {
+        let mut has_default = false;
+        if attr.path().is_ident("serde") {
+            let _ = attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("default") {
+                    has_default = true;
+                }
+                Ok(())
+            });
+        }
+        has_default
+    })
 }
 
 impl ToTokens for PermissiveCompanionType {
