@@ -16,16 +16,16 @@ struct GenericStruct<T, S> {
     b: S,
 }
 
-// #[derive(eserde::Deserialize)]
-// struct LifetimeGenericStruct<'a> {
-//     a: &'a str,
-// }
+#[derive(eserde::Deserialize)]
+struct LifetimeGenericStruct<'a> {
+    a: &'a str,
+}
 
-// #[derive(eserde::Deserialize)]
-// struct LifetimeAndGenericStruct<'a, T> {
-//     a: &'a str,
-//     b: T,
-// }
+#[derive(eserde::Deserialize)]
+struct LifetimeAndGenericStruct<'a, T> {
+    a: &'a str,
+    b: T,
+}
 
 #[derive(eserde::Deserialize)]
 struct TupleStructOneField(#[serde(default)] Option<u32>);

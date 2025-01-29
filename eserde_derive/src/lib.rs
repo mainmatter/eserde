@@ -75,9 +75,9 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
             impl #impl_generics ::eserde::_serde::Deserialize<'de> for #name #ty_generics
             #where_clause
             {
-                fn deserialize<__D>(__deserializer: __D) -> Result<Self, __D::Error>
+                fn deserialize<#deserializer_generic_ident>(__deserializer: #deserializer_generic_ident) -> Result<Self, #deserializer_generic_ident::Error>
                 where
-                    __D: ::eserde::_serde::Deserializer<'de>,
+                    #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
                 {
                     let #shadow_binding = #shadow_type_ident::deserialize(__deserializer)?;
                     Ok(#initialize_from_shadow)

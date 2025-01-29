@@ -103,15 +103,25 @@ impl PermissiveCompanionType {
             ..input.filter_attributes(keep_serde_attributes)
         };
 
-        // `serde` will infer that the type parameters of the companion type must implement
-        // the `Default` trait, on top of the `Deserialize` trait, since we marked fields
-        // that use those type parameters with `#[serde(default)]`.
-        // That's unnecessary, so we override the bounds here using `#[serde(bound(deserialize = "..."))]`.
         let bounds: Vec<String> = companion
             .generics
             .type_params()
+            // `serde` will infer that the type parameters of the companion type must implement
+            // the `Default` trait, on top of the `Deserialize` trait, since we marked fields
+            // that use those type parameters with `#[serde(default)]`.
+            // That's unnecessary, so we override the bounds here using `#[serde(bound(deserialize = "..."))]`.
             .map(|param| format!("{}: ::eserde::_serde::Deserialize<'de>", param.ident))
-            .collect();
+            .chain(
+                // When a lifetime parameter appears exclusively inside a generic container type, like `Vec<&'a T>`,
+                // `serde` will not infer that the lifetime parameter must be outlived by `'de`.
+                // Since that's exactly what's going to happen with our `MaybeInvalid`/`MaybeInvalidOrMissing` types,
+                // we need to add this bound manually.
+                companion
+                    .generics
+                    .lifetimes()
+                    .map(|param| format!("'de: '{}", param.lifetime.ident)),
+            )
+            .collect::<Vec<_>>();
         if !bounds.is_empty() {
             let bound = bounds.join(", ");
             // TODO: when we start supporting `serde(bound = "...")`, we'll have to
