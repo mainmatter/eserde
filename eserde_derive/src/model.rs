@@ -39,106 +39,51 @@ pub struct PermissiveCompanionType(pub DeriveInput);
 impl PermissiveCompanionType {
     pub fn new(ident: syn::Ident, input: &syn::DeriveInput) -> Self {
         fn modify_field_types(fields: &mut syn::Fields) {
-            match fields {
-                syn::Fields::Named(fields_named) => {
-                    for field in fields_named.named.iter_mut() {
-                        // If `&str` or `&[u8]` are used, we need to add a `#[serde(bound)]` attribute
-                        // on the wrapped field to make sure `serde` applies the right lifetime constraints.
-                        let mut add_borrow_attr = false;
-                        if let syn::Type::Reference(ref_) = &field.ty {
-                            if let syn::Type::Path(path) = &*ref_.elem {
-                                if path.path.is_ident("str") {
-                                    add_borrow_attr = true;
-                                }
-                            }
-
-                            if let syn::Type::Slice(slice) = &*ref_.elem {
-                                if let syn::Type::Path(path) = &*slice.elem {
-                                    if path.path.is_ident("u8") {
-                                        add_borrow_attr = true;
-                                    }
-                                }
-                            }
+            for field in fields.iter_mut() {
+                // If `&str` or `&[u8]` are used, we need to add a `#[serde(bound)]` attribute
+                // on the wrapped field to make sure `serde` applies the right lifetime constraints.
+                let mut add_borrow_attr = false;
+                if let syn::Type::Reference(ref_) = &field.ty {
+                    if let syn::Type::Path(path) = &*ref_.elem {
+                        if path.path.is_ident("str") {
+                            add_borrow_attr = true;
                         }
+                    }
 
-                        // Check if `#[serde(default)]` is already present on the field.
-                        // TODO: handle the `#[serde(default = "..")]` case.
-                        //   We'll have to generate a function that wraps around the
-                        //   one specified in the attribute.
-                        if !has_serde_path_attr(&field.attrs, "default") {
-                            let ty_ = &field.ty;
-                            let ty_: syn::Type = syn::parse2(quote! {
-                                ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
-                            })
-                            .unwrap();
-                            field.ty = ty_;
-                            // Add `#[serde(default)]` to the list:
-                            field.attrs.push(syn::parse_quote!(#[serde(default)]));
-                        } else {
-                            let ty_ = &field.ty;
-                            let ty_: syn::Type = syn::parse2(quote! {
-                                ::eserde::_macro_impl::MaybeInvalid<#ty_>
-                            })
-                            .unwrap();
-                            field.ty = ty_;
-                        }
-                        if add_borrow_attr && !has_serde_path_attr(&field.attrs, "borrow") {
-                            field.attrs.push(syn::parse_quote!(#[serde(borrow)]));
+                    if let syn::Type::Slice(slice) = &*ref_.elem {
+                        if let syn::Type::Path(path) = &*slice.elem {
+                            if path.path.is_ident("u8") {
+                                add_borrow_attr = true;
+                            }
                         }
                     }
                 }
-                syn::Fields::Unnamed(fields_unnamed) => {
-                    let n_fields = fields_unnamed.unnamed.len();
-                    for (i, field) in fields_unnamed.unnamed.iter_mut().enumerate() {
-                        // If `&str` or `&[u8]` are used, we need to add a `#[serde(bound)]` attribute
-                        // on the wrapped field to make sure `serde` applies the right lifetime constraints.
-                        let mut add_borrow_attr = false;
-                        if let syn::Type::Reference(ref_) = &field.ty {
-                            if let syn::Type::Path(path) = &*ref_.elem {
-                                if path.path.is_ident("str") {
-                                    add_borrow_attr = true;
-                                }
-                            }
 
-                            if let syn::Type::Slice(slice) = &*ref_.elem {
-                                if let syn::Type::Path(path) = &*slice.elem {
-                                    if path.path.is_ident("u8") {
-                                        add_borrow_attr = true;
-                                    }
-                                }
-                            }
-                        }
-
-                        // Check if `#[serde(default)]` is already present on the field.
-                        // TODO: handle the `#[serde(default = "..")]` case.
-                        //   We'll have to generate a function that wraps around the
-                        //   one specified in the attribute.
-                        let is_last_field = i == n_fields - 1;
-                        if !has_serde_path_attr(&field.attrs, "default") && is_last_field {
-                            let ty_ = &field.ty;
-                            let ty_: syn::Type = syn::parse2(quote! {
-                                ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
-                            })
-                            .unwrap();
-                            field.ty = ty_;
-                            // Add `#[serde(default)]` to the list:
-                            field.attrs.push(syn::parse_quote!(#[serde(default)]));
-                        } else {
-                            let ty_ = &field.ty;
-                            let ty_: syn::Type = syn::parse2(quote! {
-                                ::eserde::_macro_impl::MaybeInvalid<#ty_>
-                            })
-                            .unwrap();
-                            field.ty = ty_;
-                        }
-
-                        if add_borrow_attr && !has_serde_path_attr(&field.attrs, "borrow") {
-                            field.attrs.push(syn::parse_quote!(#[serde(borrow)]));
-                        }
-                    }
+                // Check if `#[serde(default)]` is already present on the field.
+                // TODO: handle the `#[serde(default = "..")]` case.
+                //   We'll have to generate a function that wraps around the
+                //   one specified in the attribute.
+                if !has_serde_path_attr(&field.attrs, "default") {
+                    let ty_ = &field.ty;
+                    let ty_: syn::Type = syn::parse2(quote! {
+                        ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
+                    })
+                    .unwrap();
+                    field.ty = ty_;
+                    // Add `#[serde(default)]` to the list:
+                    field.attrs.push(syn::parse_quote!(#[serde(default)]));
+                } else {
+                    let ty_ = &field.ty;
+                    let ty_: syn::Type = syn::parse2(quote! {
+                        ::eserde::_macro_impl::MaybeInvalid<#ty_>
+                    })
+                    .unwrap();
+                    field.ty = ty_;
                 }
-                syn::Fields::Unit => {}
-            };
+                if add_borrow_attr && !has_serde_path_attr(&field.attrs, "borrow") {
+                    field.attrs.push(syn::parse_quote!(#[serde(borrow)]));
+                }
+            }
         }
 
         let mut companion = DeriveInput {
