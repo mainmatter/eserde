@@ -42,8 +42,8 @@ impl PermissiveCompanionType {
             for field in fields.iter_mut() {
                 // If `&str` or `&[u8]` are used, we need to add a `#[serde(bound)]` attribute
                 // on the wrapped field to make sure `serde` applies the right lifetime constraints.
-                let mut add_borrow_attr = false;
                 if let syn::Type::Reference(ref_) = &field.ty {
+                    let mut add_borrow_attr = false;
                     if let syn::Type::Path(path) = &*ref_.elem {
                         if path.path.is_ident("str") {
                             add_borrow_attr = true;
@@ -56,6 +56,9 @@ impl PermissiveCompanionType {
                                 add_borrow_attr = true;
                             }
                         }
+                    }
+                    if add_borrow_attr && !has_serde_path_attr(&field.attrs, "borrow") {
+                        field.attrs.push(syn::parse_quote!(#[serde(borrow)]));
                     }
                 }
 
@@ -79,9 +82,6 @@ impl PermissiveCompanionType {
                     })
                     .unwrap();
                     field.ty = ty_;
-                }
-                if add_borrow_attr && !has_serde_path_attr(&field.attrs, "borrow") {
-                    field.attrs.push(syn::parse_quote!(#[serde(borrow)]));
                 }
             }
         }
