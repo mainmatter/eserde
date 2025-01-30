@@ -66,22 +66,24 @@ impl PermissiveCompanionType {
                 // TODO: handle the `#[serde(default = "..")]` case.
                 //   We'll have to generate a function that wraps around the
                 //   one specified in the attribute.
-                if !has_serde_path_attr(&field.attrs, "default") {
-                    let ty_ = &field.ty;
-                    let ty_: syn::Type = syn::parse2(quote! {
-                        ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
-                    })
-                    .unwrap();
-                    field.ty = ty_;
-                    // Add `#[serde(default)]` to the list:
+                let has_default = has_serde_path_attr(&field.attrs, "default");
+                // Add `#[serde(default)]` to the list:
+                if !has_default {
                     field.attrs.push(syn::parse_quote!(#[serde(default)]));
-                } else {
+                }
+
+                field.ty = {
                     let ty_ = &field.ty;
-                    let ty_: syn::Type = syn::parse2(quote! {
-                        ::eserde::_macro_impl::MaybeInvalid<#ty_>
-                    })
-                    .unwrap();
-                    field.ty = ty_;
+                    let tokens = if !has_default {
+                        quote! {
+                            ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
+                        }
+                    } else {
+                        quote! {
+                            ::eserde::_macro_impl::MaybeInvalid<#ty_>
+                        }
+                    };
+                    syn::parse2(tokens).unwrap()
                 }
             }
         }
