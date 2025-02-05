@@ -88,10 +88,18 @@ fn human_deserialize() {
         a: LeafStruct,
         b: u64,
         c: String,
+        #[eserde(compat)]
+        d: IncompatibleLeafStruct,
     }
 
     #[derive(Debug, eserde::Deserialize)]
     struct LeafStruct {
+        #[serde(default)]
+        a2: Option<u32>,
+    }
+
+    #[derive(Debug, serde::Deserialize)]
+    struct IncompatibleLeafStruct {
         #[serde(default)]
         a2: Option<u32>,
     }
@@ -108,6 +116,7 @@ fn human_deserialize() {
     invalid value: integer `-5`, expected u32 at line 2 column 19
     invalid type: integer `8`, expected a string at line 3 column 10
     missing field `b`
+    missing field `d`
     "###);
 
     let value = serde_json::from_str::<TopLevelStruct>(payload);
