@@ -34,11 +34,9 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     );
     let companion_type_ident = &companion_type.0.ident;
     let companion_binding = format_ident!("__companion");
-    let errors_ident = format_ident!("__errors");
     let deserializer_generic_ident = format_ident!("__D");
     let initialize_from_companion = initialize_from_companion(
         &input.data,
-        &errors_ident,
         &format_ident!("Self"),
         &companion_type_ident,
         &companion_binding,
@@ -62,11 +60,15 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
             impl #impl_generics ::eserde::HumanDeserialize<'de> for #name #ty_generics
             #where_clause
             {
-                fn human_deserialize<#deserializer_generic_ident>(__deserializer: #deserializer_generic_ident) -> Result<Self, Vec<#deserializer_generic_ident::Error>>
+                fn human_deserialize<#deserializer_generic_ident>(__deserializer: #deserializer_generic_ident) -> Result<Self, ()>
                 where
                     #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
                 {
-                    let #companion_binding = <#companion_type_ident #ty_generics as ::eserde::_serde::Deserialize>::deserialize(__deserializer).map_err(|e| ::std::vec![e])?;
+                    let #companion_binding = <#companion_type_ident #ty_generics as ::eserde::_serde::Deserialize>::deserialize(__deserializer)
+                        .map_err(|e| {
+                            ::eserde::DESERIALIZATION_ERRORS.with_borrow_mut(|errors| errors.push(::eserde::DeserializationError::Custom { message: e.to_string() }));
+                            ()
+                        })?;
                     #initialize_from_companion
                 }
             }
@@ -215,12 +217,12 @@ fn initialize_from_shadow(
 /// corresponding field on the target type in case of success, otherwise accumulating errors.
 fn initialize_from_companion(
     input: &Data,
-    errors: &syn::Ident,
     type_ident: &syn::Ident,
     companion_type: &syn::Ident,
     companion_binding: &syn::Ident,
     deserializer_type: &syn::Ident,
 ) -> proc_macro2::TokenStream {
+    let has_errored = format_ident!("__has_errored");
     match input {
         Data::Struct(data) => {
             let assign = data.fields.members().map(|field| {
@@ -236,15 +238,16 @@ fn initialize_from_companion(
                 };
                 quote! {
                     if let Some(err) = #companion_binding.#field.error::<#deserializer_type>(#field_str) {
-                        #errors.push(err);
+                        ::eserde::DESERIALIZATION_ERRORS.with(|errors| errors.borrow_mut().push(err));
+                        #has_errored = true;
                     }
                 }
             });
             quote! {
-                let mut #errors = ::std::vec::Vec::new();
+                let mut #has_errored = false;
                 #(#accumulate)*
-                if !#errors.is_empty() {
-                    return Err(#errors);
+                if #has_errored {
+                    return Err(());
                 }
                 Ok(#type_ident {
                     #(#assign),*
@@ -297,16 +300,17 @@ fn initialize_from_companion(
                         };
                         quote! {
                             if let Some(err) = #v.error::<#deserializer_type>(#field_str) {
-                                #errors.push(err);
+                                ::eserde::DESERIALIZATION_ERRORS.with(|errors| errors.borrow_mut().push(err));
+                                #has_errored = true;
                             }
                         }
                     });
                 quote! {
                     #companion_type::#variant_ident { #(#destructure),* } => {
-                        let mut #errors = ::std::vec::Vec::new();
+                        let mut #has_errored = false;
                         #(#accumulate)*
-                        if !#errors.is_empty() {
-                            return Err(#errors);
+                        if #has_errored {
+                            return Err(());
                         }
                         #type_ident::#variant_ident { #(#assign),* }
                     }

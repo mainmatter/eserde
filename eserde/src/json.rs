@@ -1,8 +1,8 @@
 pub use serde_json::Error;
 
-use crate::HumanDeserialize;
+use crate::{error::DeserializationError, HumanDeserialize, DESERIALIZATION_ERRORS};
 
-pub fn from_str<'a, T>(s: &'a str) -> Result<T, Vec<serde_json::Error>>
+pub fn from_str<'a, T>(s: &'a str) -> Result<T, Vec<DeserializationError>>
 where
     T: HumanDeserialize<'a>,
 {
@@ -16,13 +16,15 @@ where
     let mut de = serde_json::Deserializer::from_str(s);
     match T::human_deserialize(&mut de) {
         Ok(_) => {
-            if cfg!(debug_assertions)
-            {
+            if cfg!(debug_assertions) {
                 panic!("Expected human_deserialize to fail since `serde` deserialization failed, instead it succeeded. Original `serde` error: {:?}", error);
             } else {
+                let error = DeserializationError::Custom {
+                    message: error.to_string(),
+                };
                 Err(vec![error])
             }
         }
-        Err(e) => Err(e),
+        Err(_) => Err(DESERIALIZATION_ERRORS.take()),
     }
 }

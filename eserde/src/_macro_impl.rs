@@ -1,3 +1,5 @@
+use crate::error::DeserializationError;
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MaybeInvalidOrMissing<T> {
     Valid(T),
@@ -6,16 +8,16 @@ pub enum MaybeInvalidOrMissing<T> {
 }
 
 impl<T> MaybeInvalidOrMissing<T> {
-    pub fn error<'de, D>(&self, field_name: &'static str) -> Option<D::Error>
+    pub fn error<'de, D>(&self, field_name: &'static str) -> Option<DeserializationError>
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-
         match self {
             Self::Valid(_) => None,
-            Self::Invalid(e) => Some(D::Error::custom(e)),
-            Self::Missing => Some(D::Error::missing_field(field_name)),
+            Self::Invalid(message) => Some(DeserializationError::Custom {
+                message: message.clone(),
+            }),
+            Self::Missing => Some(DeserializationError::MissingField { field_name }),
         }
     }
 
@@ -64,15 +66,15 @@ where
 }
 
 impl<T> MaybeInvalid<T> {
-    pub fn error<'de, D>(&self, _field_name: &'static str) -> Option<D::Error>
+    pub fn error<'de, D>(&self, _field_name: &'static str) -> Option<DeserializationError>
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-
         match self {
             Self::Valid(_) => None,
-            Self::Invalid(e) => Some(D::Error::custom(e)),
+            Self::Invalid(message) => Some(DeserializationError::Custom {
+                message: message.clone(),
+            }),
         }
     }
 
