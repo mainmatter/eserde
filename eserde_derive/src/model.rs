@@ -18,7 +18,7 @@ impl ShadowType {
             ident,
             // We don't want to keep _all_ attributes for the shadow type, only the `serde` ones
             // (e.g. `#[serde(default)]`), so we filter out the others.
-            ..input.filter_attributes(keep_serde_attributes)
+            ..input.filter_attributes(|attr| attr.meta.path().is_ident("serde"))
         };
         Self(shadow)
     }
@@ -40,6 +40,11 @@ impl PermissiveCompanionType {
     pub fn new(ident: syn::Ident, input: &syn::DeriveInput) -> Self {
         fn modify_field_types(fields: &mut syn::Fields) {
             for field in fields.iter_mut() {
+                // Process all `eserde` attributes, then remove them since
+                // they are not valid `serde` attributes.
+                let is_eserde_compatible = !has_eserde_path_attr(&field.attrs, "compat");
+                field.attrs.retain(|attr| keep_serde_attributes(attr));
+
                 // If `&str` or `&[u8]` are used, we need to add a `#[serde(bound)]` attribute
                 // on the wrapped field to make sure `serde` applies the right lifetime constraints.
                 if let syn::Type::Reference(ref_) = &field.ty {
@@ -75,16 +80,26 @@ impl PermissiveCompanionType {
                 field.ty = {
                     let ty_ = &field.ty;
                     let tokens = if !has_default {
+                        if is_eserde_compatible {
+                            field.attrs.push(
+                                syn::parse_quote!(#[serde(deserialize_with = "::eserde::_macro_impl::maybe_invalid_or_missing_human_deserialize")]),
+                            );
+                        }
                         quote! {
                             ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
                         }
                     } else {
+                        if is_eserde_compatible {
+                            field.attrs.push(
+                                syn::parse_quote!(#[serde(deserialize_with = "::eserde::_macro_impl::maybe_invalid_human_deserialize")]),
+                            );
+                        }
                         quote! {
                             ::eserde::_macro_impl::MaybeInvalid<#ty_>
                         }
                     };
                     syn::parse2(tokens).unwrap()
-                }
+                };
             }
         }
 
@@ -92,7 +107,9 @@ impl PermissiveCompanionType {
             vis: syn::Visibility::Inherited,
             ident,
             generics: input.generics.clone(),
-            ..input.filter_attributes(keep_serde_attributes)
+            ..input.filter_attributes(|attr| {
+                attr.meta.path().is_ident("serde") || attr.meta.path().is_ident("eserde")
+            })
         };
 
         let bounds: Vec<String> = companion
@@ -130,19 +147,33 @@ impl PermissiveCompanionType {
     }
 }
 
-/// Check if the field has a `#[serde(default)]` attribute attached to it.
 fn has_serde_path_attr(attrs: &[syn::Attribute], path: &str) -> bool {
     attrs.iter().any(|attr| {
-        let mut has_default = false;
+        let mut has_attr = false;
         if attr.path().is_ident("serde") {
             let _ = attr.parse_nested_meta(|meta| {
                 if meta.path.is_ident(path) {
-                    has_default = true;
+                    has_attr = true;
                 }
                 Ok(())
             });
         }
-        has_default
+        has_attr
+    })
+}
+
+fn has_eserde_path_attr(attrs: &[syn::Attribute], path: &str) -> bool {
+    attrs.iter().any(|attr| {
+        let mut has_attr = false;
+        if attr.path().is_ident("eserde") {
+            let _ = attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident(path) {
+                    has_attr = true;
+                }
+                Ok(())
+            });
+        }
+        has_attr
     })
 }
 

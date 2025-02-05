@@ -1,23 +1,17 @@
-use crate::error::DeserializationError;
+use crate::{error::DeserializationError, HumanDeserialize, DESERIALIZATION_ERRORS};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MaybeInvalidOrMissing<T> {
     Valid(T),
-    Invalid(String),
+    Invalid,
     Missing,
 }
 
 impl<T> MaybeInvalidOrMissing<T> {
-    pub fn error<'de, D>(&self, field_name: &'static str) -> Option<DeserializationError>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        match self {
-            Self::Valid(_) => None,
-            Self::Invalid(message) => Some(DeserializationError::Custom {
-                message: message.clone(),
-            }),
-            Self::Missing => Some(DeserializationError::MissingField { field_name }),
+    pub fn push_error_if_missing(&self, field_name: &'static str) {
+        if let Self::Missing = self {
+            DESERIALIZATION_ERRORS
+                .with_borrow_mut(|v| v.push(DeserializationError::MissingField { field_name }));
         }
     }
 
@@ -44,16 +38,37 @@ where
         D: serde::Deserializer<'de>,
     {
         let v = match T::deserialize(deserializer) {
-            Ok(value) => MaybeInvalidOrMissing::Valid(value),
-            Err(error) => MaybeInvalidOrMissing::Invalid(error.to_string()),
+            Ok(value) => Self::Valid(value),
+            Err(error) => {
+                DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
+                    v.push(DeserializationError::Custom {
+                        message: error.to_string(),
+                    })
+                });
+                Self::Invalid
+            }
         };
         Ok(v)
     }
 }
 
+pub fn maybe_invalid_or_missing_human_deserialize<'de, D, T>(
+    deserializer: D,
+) -> Result<MaybeInvalidOrMissing<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: HumanDeserialize<'de>,
+{
+    let v = match T::human_deserialize(deserializer) {
+        Ok(value) => MaybeInvalidOrMissing::Valid(value),
+        Err(_) => MaybeInvalidOrMissing::Invalid,
+    };
+    Ok(v)
+}
+
 pub enum MaybeInvalid<T> {
     Valid(T),
-    Invalid(String),
+    Invalid,
 }
 
 impl<T> Default for MaybeInvalid<T>
@@ -66,24 +81,17 @@ where
 }
 
 impl<T> MaybeInvalid<T> {
-    pub fn error<'de, D>(&self, _field_name: &'static str) -> Option<DeserializationError>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        match self {
-            Self::Valid(_) => None,
-            Self::Invalid(message) => Some(DeserializationError::Custom {
-                message: message.clone(),
-            }),
-        }
-    }
-
     pub fn value(self) -> Option<T> {
         match self {
             Self::Valid(v) => Some(v),
             _ => None,
         }
     }
+
+    /// Added for simplicity in order to avoid having to distinguish in the macro
+    /// between `MaybeInvalid` and `MaybeInvalidOrMissing`.
+    /// To be removed in the future.
+    pub fn push_error_if_missing(&self, _field_name: &'static str) {}
 }
 
 impl<'de, T> serde::Deserialize<'de> for MaybeInvalid<T>
@@ -95,9 +103,30 @@ where
         D: serde::Deserializer<'de>,
     {
         let v = match T::deserialize(deserializer) {
-            Ok(value) => MaybeInvalid::Valid(value),
-            Err(e) => MaybeInvalid::Invalid(e.to_string()),
+            Ok(value) => Self::Valid(value),
+            Err(error) => {
+                DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
+                    v.push(DeserializationError::Custom {
+                        message: error.to_string(),
+                    })
+                });
+                Self::Invalid
+            }
         };
         Ok(v)
     }
+}
+
+pub fn maybe_invalid_human_deserialize<'de, D, T>(
+    deserializer: D,
+) -> Result<MaybeInvalid<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: HumanDeserialize<'de>,
+{
+    let v = match T::human_deserialize(deserializer) {
+        Ok(value) => MaybeInvalid::Valid(value),
+        Err(_) => MaybeInvalid::Invalid,
+    };
+    Ok(v)
 }

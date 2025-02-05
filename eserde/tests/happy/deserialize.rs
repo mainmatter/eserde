@@ -13,7 +13,9 @@ struct NamedStruct {
 
 #[derive(eserde::Deserialize)]
 struct GenericStruct<T, S> {
+    #[eserde(compat)]
     a: T,
+    #[eserde(compat)]
     b: S,
 }
 
@@ -82,28 +84,33 @@ enum EnumWithBothNamedAndTupleVariants {
 #[test]
 fn human_deserialize() {
     #[derive(Debug, eserde::Deserialize)]
-    struct FlatStruct {
-        #[serde(default)]
-        a: Option<u32>,
+    struct TopLevelStruct {
+        a: LeafStruct,
         b: u64,
         c: String,
     }
 
+    #[derive(Debug, eserde::Deserialize)]
+    struct LeafStruct {
+        #[serde(default)]
+        a2: Option<u32>,
+    }
+
     let payload = r#"{
-    "a": -5,
+    "a": { "a2": -5 },
     "c": 8
 }"#;
 
-    let value = eserde::json::from_str::<FlatStruct>(payload);
+    let value = eserde::json::from_str::<TopLevelStruct>(payload);
     let error = value.unwrap_err();
     let error_repr = error.into_iter().map(|e| e.to_string()).join("\n");
     insta::assert_snapshot!(error_repr, @r###"
-    invalid value: integer `-5`, expected u32 at line 2 column 11
-    missing field `b`
+    invalid value: integer `-5`, expected u32 at line 2 column 19
     invalid type: integer `8`, expected a string at line 3 column 10
+    missing field `b`
     "###);
 
-    let value = serde_json::from_str::<FlatStruct>(payload);
+    let value = serde_json::from_str::<TopLevelStruct>(payload);
     let error_repr = value.unwrap_err().to_string();
-    insta::assert_snapshot!(error_repr, @"invalid value: integer `-5`, expected u32 at line 2 column 11");
+    insta::assert_snapshot!(error_repr, @"invalid value: integer `-5`, expected u32 at line 2 column 19");
 }

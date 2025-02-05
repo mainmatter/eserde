@@ -8,7 +8,7 @@ mod filter_attributes;
 mod model;
 mod unsupported;
 
-#[proc_macro_derive(Deserialize, attributes(serde))]
+#[proc_macro_derive(Deserialize, attributes(serde, eserde))]
 pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -35,12 +35,13 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let companion_type_ident = &companion_type.0.ident;
     let companion_binding = format_ident!("__companion");
     let deserializer_generic_ident = format_ident!("__D");
+    let n_errors = format_ident!("__errors");
     let initialize_from_companion = initialize_from_companion(
         &input.data,
         &format_ident!("Self"),
         &companion_type_ident,
         &companion_binding,
-        &deserializer_generic_ident,
+        &n_errors,
     );
 
     let deser_generics = ImplDeserGenerics::new(&input);
@@ -64,6 +65,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
                 where
                     #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
                 {
+                    let #n_errors = ::eserde::DESERIALIZATION_ERRORS.with_borrow(|errors| errors.len());
                     let #companion_binding = <#companion_type_ident #ty_generics as ::eserde::_serde::Deserialize>::deserialize(__deserializer)
                         .map_err(|e| {
                             ::eserde::DESERIALIZATION_ERRORS.with_borrow_mut(|errors| errors.push(::eserde::DeserializationError::Custom { message: e.to_string() }));
@@ -220,9 +222,8 @@ fn initialize_from_companion(
     type_ident: &syn::Ident,
     companion_type: &syn::Ident,
     companion_binding: &syn::Ident,
-    deserializer_type: &syn::Ident,
+    n_errors: &syn::Ident,
 ) -> proc_macro2::TokenStream {
-    let has_errored = format_ident!("__has_errored");
     match input {
         Data::Struct(data) => {
             let assign = data.fields.members().map(|field| {
@@ -234,19 +235,16 @@ fn initialize_from_companion(
                 let field_str = match &field {
                     syn::Member::Named(ident) => ident.to_string(),
                     // TODO: Improve naming for unnamed fields
-                    syn::Member::Unnamed(index) => format!("{}", index.index)
+                    syn::Member::Unnamed(index) => format!("{}", index.index),
                 };
                 quote! {
-                    if let Some(err) = #companion_binding.#field.error::<#deserializer_type>(#field_str) {
-                        ::eserde::DESERIALIZATION_ERRORS.with(|errors| errors.borrow_mut().push(err));
-                        #has_errored = true;
-                    }
+                    #companion_binding.#field.push_error_if_missing(#field_str);
                 }
             });
             quote! {
-                let mut #has_errored = false;
                 #(#accumulate)*
-                if #has_errored {
+                let __new_n_errors = ::eserde::DESERIALIZATION_ERRORS.with_borrow(|errors| errors.len());
+                if __new_n_errors > #n_errors {
                     return Err(());
                 }
                 Ok(#type_ident {
@@ -299,17 +297,14 @@ fn initialize_from_companion(
                             syn::Member::Unnamed(index) => format!("{}", index.index),
                         };
                         quote! {
-                            if let Some(err) = #v.error::<#deserializer_type>(#field_str) {
-                                ::eserde::DESERIALIZATION_ERRORS.with(|errors| errors.borrow_mut().push(err));
-                                #has_errored = true;
-                            }
+                            #v.push_error_if_missing(#field_str);
                         }
                     });
                 quote! {
                     #companion_type::#variant_ident { #(#destructure),* } => {
-                        let mut #has_errored = false;
                         #(#accumulate)*
-                        if #has_errored {
+                        let __new_n_errors = ::eserde::DESERIALIZATION_ERRORS.with_borrow(|errors| errors.len());
+                        if __new_n_errors > #n_errors {
                             return Err(());
                         }
                         #type_ident::#variant_ident { #(#assign),* }

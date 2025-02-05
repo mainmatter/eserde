@@ -2,6 +2,7 @@
 pub mod json;
 
 mod error;
+mod impl_;
 
 pub use error::DeserializationError;
 
