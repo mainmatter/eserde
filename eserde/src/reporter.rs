@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use crate::DeserializationError;
 
-/// The entrypoint for reporting errors that occurred during [`HumanDeserialize::human_deserialize`].
+/// The entrypoint for reporting errors that occurred during [`HumanDeserialize::human_deserialize`](crate::HumanDeserialize::human_deserialize).
 ///
 /// Check out [`ErrorReporter::start_deserialization`] for more information.
 pub struct ErrorReporter;
@@ -12,15 +12,15 @@ impl ErrorReporter {
         deserialization operation to ensure that errors are correctly reported."]
     /// Kick-off a deserialization operation.
     ///
-    /// This method must be invoked before calling [`HumanDeserialize::human_deserialize`], otherwise
-    /// the deserializer will panic when trying to report errors.
+    /// This method must be invoked before calling [`HumanDeserialize::human_deserialize`](crate::HumanDeserialize::human_deserialize),
+    /// otherwise the deserializer will panic when trying to report errors.
     ///
     /// The returned guard must be kept alive for the duration of the whole deserialization operation.
     /// Once the guard is dropped, the deserialization operation is considered finished and the accumulated
     /// errors are cleared.
     ///
     /// In most cases, you don't need to call this method directly, as it's usually taken care of by the
-    /// format-specific functions provided by `eserde`, such as [`eserde::json::from_str`].
+    /// format-specific functions provided by `eserde`, such as [`eserde::json::from_str`](crate::json::from_str).
     pub fn start_deserialization() -> ErrorReporterGuard {
         DESERIALIZATION_ERRORS.set(Some(Vec::new()));
         ErrorReporterGuard

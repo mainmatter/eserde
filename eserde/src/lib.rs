@@ -18,7 +18,7 @@ pub use eserde_derive::Deserialize;
     It may not always be possible to add the annotation, e.g. if the type is defined in another crate that you don't control.\n\
     If that's the case, and you're using that type for one of your fields, you can annotate the field instead!\n\
     Add `#[eserde(compat)]` on the field to instruct `eserde` to fallback to the vanilla deserialization logic for that type, \
-    removing the `HumanDeserialize` requirement."
+    removing the `HumanDeserialize` requirement.\n"
 )]
 pub trait HumanDeserialize<'de>: Sized + serde::Deserialize<'de> {
     /// Deserialize this value using the given `serde` deserializer.
@@ -39,16 +39,7 @@ pub trait HumanDeserialize<'de>: Sized + serde::Deserialize<'de> {
     /// # Errors
     ///
     /// If deserialization fails, this function will return an `Err(())`.
-    /// To retrieve the error details, check the [`DESERIALIZATION_ERRORS`] thread-local.
-    ///
-    /// You're expected to set the thread-local to an empty vector before starting a deserialization
-    /// operation, otherwise errors from previous deserializations will be included in the current
-    /// deserialization.
-    ///
-    /// This is usually taken care of by the format-specific functions provided by `eserde`,
-    /// such as [`eserde::json::from_str`].
-    ///
-    /// [`DESERIALIZATION_ERRORS`]: thread_local!@DESERIALIZATION_ERRORS
+    /// To retrieve the error details, check the [`ErrorReporter::take_errors`](crate::reporter::ErrorReporter::take_errors) function.
     fn human_deserialize<D>(deserializer: D) -> Result<Self, ()>
     where
         D: serde::Deserializer<'de>;
