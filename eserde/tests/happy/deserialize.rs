@@ -13,7 +13,7 @@ struct NamedStruct {
 
 #[derive(eserde::Deserialize)]
 struct GenericStruct<T, S> {
-    #[eserde(compat)]
+    // #[eserde(compat)]
     a: T,
     #[eserde(compat)]
     b: S,
