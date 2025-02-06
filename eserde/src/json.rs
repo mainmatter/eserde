@@ -1,6 +1,6 @@
 pub use serde_json::Error;
 
-use crate::{error::DeserializationError, HumanDeserialize, DESERIALIZATION_ERRORS};
+use crate::{reporter::ErrorReporter, DeserializationError, HumanDeserialize};
 
 pub fn from_str<'a, T>(s: &'a str) -> Result<T, Vec<DeserializationError>>
 where
@@ -13,6 +13,7 @@ where
         }
         Err(e) => e,
     };
+    let _guard = ErrorReporter::start_deserialization();
     let mut de = serde_json::Deserializer::from_str(s);
     match T::human_deserialize(&mut de) {
         Ok(_) => {
@@ -25,6 +26,6 @@ where
                 Err(vec![error])
             }
         }
-        Err(_) => Err(DESERIALIZATION_ERRORS.take()),
+        Err(_) => Err(ErrorReporter::take_errors()),
     }
 }

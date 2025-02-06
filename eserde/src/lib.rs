@@ -1,10 +1,8 @@
 #[cfg(feature = "json")]
 pub mod json;
 
-mod error;
 mod impl_;
-
-pub use error::DeserializationError;
+pub mod reporter;
 
 #[doc(hidden)]
 pub use serde as _serde;
@@ -56,20 +54,23 @@ pub trait HumanDeserialize<'de>: Sized + serde::Deserialize<'de> {
         D: serde::Deserializer<'de>;
 }
 
-thread_local! {
-    /// Errors that occurred during deserialization.
-    ///
-    /// # Why a thread-local?
-    ///
-    /// We use a thread-local since we are constrained by the signature of `serde`'s `Deserialize`
-    /// trait, so we can't pass down a `&mut Vec<_>` to accumulate errors.
-    ///
-    /// # Constraints
-    ///
-    /// It is the responsibility of the user to ensure that the thread-local is empty before
-    /// starting a deserialization operation, otherwise errors from previous deserializations
-    /// will be included in the current deserialization.
-    /// This is usually taken care of by the format-specific functions provided by `eserde`,
-    /// such as `eserde::json::from_str`.
-    pub static DESERIALIZATION_ERRORS: std::cell::RefCell<Vec<DeserializationError>> = std::cell::RefCell::new(Vec::new());
+#[derive(Debug)]
+/// An error that occurred during deserialization.
+pub enum DeserializationError {
+    /// A field was missing during deserialization.
+    MissingField { field_name: &'static str },
+    /// A failure occurred during deserialization,
+    /// with a custom error message.
+    Custom { message: String },
+}
+
+impl std::fmt::Display for DeserializationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DeserializationError::MissingField { field_name } => {
+                write!(f, "missing field `{}`", field_name)
+            }
+            DeserializationError::Custom { message } => write!(f, "{}", message),
+        }
+    }
 }

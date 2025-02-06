@@ -65,11 +65,10 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
                 where
                     #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
                 {
-                    let #n_errors = ::eserde::DESERIALIZATION_ERRORS.with_borrow(|errors| errors.len());
+                    let #n_errors = ::eserde::reporter::ErrorReporter::n_errors();
                     let #companion_binding = <#companion_type_ident #ty_generics as ::eserde::_serde::Deserialize>::deserialize(__deserializer)
                         .map_err(|e| {
-                            ::eserde::DESERIALIZATION_ERRORS.with_borrow_mut(|errors| errors.push(::eserde::DeserializationError::Custom { message: e.to_string() }));
-                            ()
+                            ::eserde::reporter::ErrorReporter::report(::eserde::DeserializationError::Custom { message: e.to_string() });
                         })?;
                     #initialize_from_companion
                 }
@@ -243,7 +242,7 @@ fn initialize_from_companion(
             });
             quote! {
                 #(#accumulate)*
-                let __new_n_errors = ::eserde::DESERIALIZATION_ERRORS.with_borrow(|errors| errors.len());
+                let __new_n_errors = ::eserde::reporter::ErrorReporter::n_errors();
                 if __new_n_errors > #n_errors {
                     return Err(());
                 }
@@ -303,7 +302,7 @@ fn initialize_from_companion(
                 quote! {
                     #companion_type::#variant_ident { #(#destructure),* } => {
                         #(#accumulate)*
-                        let __new_n_errors = ::eserde::DESERIALIZATION_ERRORS.with_borrow(|errors| errors.len());
+                        let __new_n_errors = ::eserde::reporter::ErrorReporter::n_errors();
                         if __new_n_errors > #n_errors {
                             return Err(());
                         }

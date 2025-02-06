@@ -1,4 +1,4 @@
-use crate::{DeserializationError, HumanDeserialize, DESERIALIZATION_ERRORS};
+use crate::{reporter::ErrorReporter, DeserializationError, HumanDeserialize};
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
@@ -10,17 +10,11 @@ macro_rules! impl_human_deserialize {
                 where
                     D: serde::Deserializer<'de>
                 {
-                    match Self::deserialize(deserializer) {
-                        Ok(value) => Ok(value),
-                        Err(error) => {
-                            DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
-                                v.push(DeserializationError::Custom {
-                                    message: error.to_string(),
-                                })
-                            });
-                            Err(())
-                        }
-                    }
+                    Self::deserialize(deserializer).map_err(|e| {
+                        ErrorReporter::report(DeserializationError::Custom {
+                            message: e.to_string(),
+                        });
+                    })
                 }
             }
         )*
@@ -35,17 +29,11 @@ macro_rules! impl_human_deserialize {
             where
                 D: serde::Deserializer<'de>
             {
-                match Self::deserialize(deserializer) {
-                    Ok(value) => Ok(value),
-                    Err(error) => {
-                        DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
-                            v.push(DeserializationError::Custom {
-                                message: error.to_string(),
-                            })
-                        });
-                        Err(())
-                    }
-                }
+                Self::deserialize(deserializer).map_err(|e| {
+                    ErrorReporter::report(DeserializationError::Custom {
+                        message: e.to_string(),
+                    });
+                })
             }
         }
     };
@@ -94,17 +82,11 @@ where
     where
         D: serde::Deserializer<'de>,
     {
-        match Self::deserialize(deserializer) {
-            Ok(value) => Ok(value),
-            Err(error) => {
-                DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
-                    v.push(DeserializationError::Custom {
-                        message: error.to_string(),
-                    })
-                });
-                Err(())
-            }
-        }
+        Self::deserialize(deserializer).map_err(|e| {
+            ErrorReporter::report(DeserializationError::Custom {
+                message: e.to_string(),
+            });
+        })
     }
 }
 
@@ -117,17 +99,11 @@ where
     where
         D: serde::Deserializer<'de>,
     {
-        match Self::deserialize(deserializer) {
-            Ok(value) => Ok(value),
-            Err(error) => {
-                DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
-                    v.push(DeserializationError::Custom {
-                        message: error.to_string(),
-                    })
-                });
-                Err(())
-            }
-        }
+        Self::deserialize(deserializer).map_err(|e| {
+            ErrorReporter::report(DeserializationError::Custom {
+                message: e.to_string(),
+            });
+        })
     }
 }
 
@@ -141,16 +117,10 @@ where
     where
         D: serde::Deserializer<'de>,
     {
-        match Self::deserialize(deserializer) {
-            Ok(value) => Ok(value),
-            Err(error) => {
-                DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
-                    v.push(DeserializationError::Custom {
-                        message: error.to_string(),
-                    })
-                });
-                Err(())
-            }
-        }
+        Self::deserialize(deserializer).map_err(|e| {
+            ErrorReporter::report(DeserializationError::Custom {
+                message: e.to_string(),
+            });
+        })
     }
 }

@@ -1,4 +1,4 @@
-use crate::{error::DeserializationError, HumanDeserialize, DESERIALIZATION_ERRORS};
+use crate::{reporter::ErrorReporter, DeserializationError, HumanDeserialize};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MaybeInvalidOrMissing<T> {
@@ -10,8 +10,7 @@ pub enum MaybeInvalidOrMissing<T> {
 impl<T> MaybeInvalidOrMissing<T> {
     pub fn push_error_if_missing(&self, field_name: &'static str) {
         if let Self::Missing = self {
-            DESERIALIZATION_ERRORS
-                .with_borrow_mut(|v| v.push(DeserializationError::MissingField { field_name }));
+            ErrorReporter::report(DeserializationError::MissingField { field_name });
         }
     }
 
@@ -40,10 +39,8 @@ where
         let v = match T::deserialize(deserializer) {
             Ok(value) => Self::Valid(value),
             Err(error) => {
-                DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
-                    v.push(DeserializationError::Custom {
-                        message: error.to_string(),
-                    })
+                ErrorReporter::report(DeserializationError::Custom {
+                    message: error.to_string(),
                 });
                 Self::Invalid
             }
@@ -105,10 +102,8 @@ where
         let v = match T::deserialize(deserializer) {
             Ok(value) => Self::Valid(value),
             Err(error) => {
-                DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
-                    v.push(DeserializationError::Custom {
-                        message: error.to_string(),
-                    })
+                ErrorReporter::report(DeserializationError::Custom {
+                    message: error.to_string(),
                 });
                 Self::Invalid
             }
