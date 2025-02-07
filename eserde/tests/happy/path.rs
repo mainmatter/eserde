@@ -159,6 +159,32 @@ fn test_tuple_variant() {
 }
 
 #[test]
+fn test_multiple_tuple_variant() {
+    #[derive(Deserialize, Debug)]
+    struct Package {
+        dependency: Dependency,
+        another_dependency: Dependency,
+    }
+
+    #[derive(Deserialize, Debug)]
+    enum Dependency {
+        Tuple(String, String),
+        Single(String),
+    }
+
+    let j = r#"{
+        "dependency": {
+            "Tuple": ["serde", 1]
+        },
+        "another_dependency": {
+            "Single": 2
+        }
+    }"#;
+
+    test_many::<Package>(j, &["dependency.Tuple[1]", "another_dependency.Single"]);
+}
+
+#[test]
 fn test_unknown_field() {
     #[derive(Deserialize, Debug)]
     struct Package {
@@ -270,7 +296,6 @@ fn test_internally_tagged_enum() {
 }
 
 #[test]
-// Fails for `serde_path_to_error` as well.
 fn test_adjacent_tagged_enum() {
     #[derive(Debug, Deserialize)]
     #[serde(tag = "type", content = "content")]

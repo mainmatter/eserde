@@ -490,6 +490,7 @@ where
             .map(move |(v, vis)| (v, WrapVariant::new(vis)));
 
         if let Some(variant) = variant {
+            println!("Pushing from enum");
             PathTracker::push(Segment::Enum { variant });
         }
         if outcome.is_err() {
@@ -508,21 +509,27 @@ where
     type Error = X::Error;
 
     fn unit_variant(self) -> Result<(), X::Error> {
-        self.delegate.unit_variant()
+        let o = self.delegate.unit_variant();
+        PathTracker::pop();
+        o
     }
 
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, X::Error>
     where
         T: DeserializeSeed<'de>,
     {
-        self.delegate.newtype_variant_seed(TrackedSeed::new(seed))
+        let outcome = self.delegate.newtype_variant_seed(TrackedSeed::new(seed));
+        PathTracker::pop();
+        outcome
     }
 
     fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, X::Error>
     where
         V: Visitor<'de>,
     {
-        self.delegate.tuple_variant(len, Wrap::new(visitor))
+        let outcome = self.delegate.tuple_variant(len, Wrap::new(visitor));
+        PathTracker::pop();
+        outcome
     }
 
     fn struct_variant<V>(
@@ -533,7 +540,9 @@ where
     where
         V: Visitor<'de>,
     {
-        self.delegate.struct_variant(fields, Wrap::new(visitor))
+        let outcome = self.delegate.struct_variant(fields, Wrap::new(visitor));
+        PathTracker::pop();
+        outcome
     }
 }
 
