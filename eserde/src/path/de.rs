@@ -289,6 +289,13 @@ where
         self.delegate.visit_map(MapAccess::new(visitor))
     }
 
+    fn visit_enum<V>(self, visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: de::EnumAccess<'de>,
+    {
+        self.delegate.visit_enum(Wrap::new(visitor))
+    }
+
     // After this, all boring forwarding methods.
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         self.delegate.expecting(formatter)
@@ -442,13 +449,6 @@ where
             .visit_newtype_struct(Deserializer::new(deserializer))
     }
 
-    fn visit_enum<V>(self, visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: de::EnumAccess<'de>,
-    {
-        self.delegate.visit_enum(visitor)
-    }
-
     fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -484,16 +484,19 @@ where
         V: DeserializeSeed<'de>,
     {
         let mut variant = None;
-        self.delegate
+        let outcome = self
+            .delegate
             .variant_seed(CaptureKey::new(seed, &mut variant))
-            .map(move |(v, vis)| {
-                if let Some(variant) = variant {
-                    PathTracker::push(Segment::Enum {
-                        variant: variant.clone(),
-                    });
-                }
-                (v, WrapVariant::new(vis))
-            })
+            .map(move |(v, vis)| (v, WrapVariant::new(vis)));
+
+        if let Some(variant) = variant {
+            PathTracker::push(Segment::Enum { variant });
+        }
+        if outcome.is_err() {
+            PathTracker::stash_current_path_for_error();
+        }
+
+        outcome
     }
 }
 
@@ -1114,6 +1117,9 @@ where
         PathTracker::push(Segment::Seq { index: self.index });
         self.index += 1;
         let outcome = self.delegate.next_element_seed(TrackedSeed::new(seed));
+        if outcome.is_err() {
+            PathTracker::stash_current_path_for_error();
+        }
         PathTracker::pop();
         outcome
     }
@@ -1154,6 +1160,9 @@ where
         if let Some(key) = key.take() {
             PathTracker::push(Segment::Map { key });
         }
+        if outcome.is_err() {
+            PathTracker::stash_current_path_for_error();
+        }
         outcome
     }
 
@@ -1162,6 +1171,9 @@ where
         V: DeserializeSeed<'de>,
     {
         let outcome = self.delegate.next_value_seed(TrackedSeed::new(seed));
+        if outcome.is_err() {
+            PathTracker::stash_current_path_for_error();
+        }
         PathTracker::pop();
         outcome
     }

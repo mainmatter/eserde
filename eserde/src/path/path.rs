@@ -11,8 +11,16 @@ pub struct Path {
     pub segments: Vec<Segment>,
 }
 
+impl Default for Path {
+    fn default() -> Self {
+        Path {
+            segments: Vec::new(),
+        }
+    }
+}
+
 /// Single segment of a path.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Segment {
     Seq { index: usize },
     Map { key: String },

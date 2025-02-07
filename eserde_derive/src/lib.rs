@@ -37,7 +37,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let companion_type_ident = &companion_type.ty_.ident;
     let companion_binding = format_ident!("__companion");
     let deserializer_generic_ident = format_ident!("__D");
-    let n_errors = format_ident!("__errors");
+    let n_errors = format_ident!("__n_errors");
     let initialize_from_companion = initialize_from_companion(
         &input.data,
         &format_ident!("Self"),
