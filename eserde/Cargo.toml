@@ -1,0 +1,23 @@
+[package]
+name = "eserde"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = ["derive"]
+derive = ["serde/derive"]
+json = ["dep:serde_json"]
+
+[dependencies]
+serde = { workspace = true }
+eserde_derive = { path = "../eserde_derive" }
+serde_json = { workspace = true, optional = true }
+itoa = { workspace = true }
+
+[dev-dependencies]
+eserde = { path = ".", features = ["json"] }
+insta = { workspace = true }
+itertools = { workspace = true }
+serde_path_to_error = { workspace = true }
