@@ -34,10 +34,11 @@ impl ErrorReporter {
     /// This method will panic if called outside of a deserialization operation.
     /// Check out [`ErrorReporter::start_deserialization`] for more information.
     pub fn report(details: DeserializationErrorDetails) {
-        let error = DeserializationError {
-            path: PathTracker::current_path(),
-            details,
+        let path = match PathTracker::unstash_current_path_for_error() {
+            Some(p) => Some(p),
+            None => PathTracker::current_path(),
         };
+        let error = DeserializationError { path, details };
         let success = DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
             if let Some(v) = v {
                 v.push(error);

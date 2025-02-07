@@ -185,8 +185,8 @@ pub fn initialize_from_companion(
             });
             quote! {
                 #(#accumulate)*
-                let __new_n_errors = ::eserde::reporter::ErrorReporter::n_errors();
-                if __new_n_errors > #n_errors {
+                let __n_new_errors = ::eserde::reporter::ErrorReporter::n_errors();
+                if __n_new_errors > #n_errors {
                     return Err(());
                 }
                 Ok(#type_ident {
@@ -245,8 +245,8 @@ pub fn initialize_from_companion(
                 quote! {
                     #companion_type::#variant_ident { #(#destructure),* } => {
                         #(#accumulate)*
-                        let __new_n_errors = ::eserde::reporter::ErrorReporter::n_errors();
-                        if __new_n_errors > #n_errors {
+                        let __n_new_errors = ::eserde::reporter::ErrorReporter::n_errors();
+                        if __n_new_errors > #n_errors {
                             return Err(());
                         }
                         #type_ident::#variant_ident { #(#assign),* }
