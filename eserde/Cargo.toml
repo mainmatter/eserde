@@ -14,8 +14,10 @@ json = ["dep:serde_json"]
 serde = { workspace = true }
 eserde_derive = { path = "../eserde_derive" }
 serde_json = { workspace = true, optional = true }
+itoa = { workspace = true }
 
 [dev-dependencies]
 eserde = { path = ".", features = ["json"] }
-insta = "1.42.1"
-itertools = "0.14"
+insta = { workspace = true }
+itertools = { workspace = true }
+serde_path_to_error = { workspace = true }

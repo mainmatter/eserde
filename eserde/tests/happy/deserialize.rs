@@ -113,8 +113,8 @@ fn human_deserialize() {
     let error = value.unwrap_err();
     let error_repr = error.into_iter().map(|e| e.to_string()).join("\n");
     insta::assert_snapshot!(error_repr, @r###"
-    invalid value: integer `-5`, expected u32 at line 2 column 19
-    invalid type: integer `8`, expected a string at line 3 column 10
+    a.a2: invalid value: integer `-5`, expected u32 at line 2 column 19
+    c: invalid type: integer `8`, expected a string at line 3 column 10
     missing field `b`
     missing field `d`
     "###);

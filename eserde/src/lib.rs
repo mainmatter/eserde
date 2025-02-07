@@ -2,6 +2,7 @@
 pub mod json;
 
 mod impl_;
+pub mod path;
 pub mod reporter;
 
 #[doc(hidden)]
@@ -46,8 +47,25 @@ pub trait HumanDeserialize<'de>: Sized + serde::Deserialize<'de> {
 }
 
 #[derive(Debug)]
+pub struct DeserializationError {
+    pub path: Option<path::Path>,
+    pub details: DeserializationErrorDetails,
+}
+
+impl std::fmt::Display for DeserializationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(path) = &self.path {
+            if !path.segments.is_empty() {
+                write!(f, "{}: ", path)?;
+            }
+        }
+        write!(f, "{}", self.details)
+    }
+}
+
+#[derive(Debug)]
 /// An error that occurred during deserialization.
-pub enum DeserializationError {
+pub enum DeserializationErrorDetails {
     /// A field was missing during deserialization.
     MissingField { field_name: &'static str },
     /// A failure occurred during deserialization,
@@ -55,13 +73,13 @@ pub enum DeserializationError {
     Custom { message: String },
 }
 
-impl std::fmt::Display for DeserializationError {
+impl std::fmt::Display for DeserializationErrorDetails {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DeserializationError::MissingField { field_name } => {
+            DeserializationErrorDetails::MissingField { field_name } => {
                 write!(f, "missing field `{}`", field_name)
             }
-            DeserializationError::Custom { message } => write!(f, "{}", message),
+            DeserializationErrorDetails::Custom { message } => write!(f, "{}", message),
         }
     }
 }

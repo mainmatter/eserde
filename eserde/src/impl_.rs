@@ -1,4 +1,4 @@
-use crate::{reporter::ErrorReporter, DeserializationError, HumanDeserialize};
+use crate::{reporter::ErrorReporter, DeserializationErrorDetails, HumanDeserialize};
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
@@ -11,7 +11,7 @@ macro_rules! impl_human_deserialize {
                     D: serde::Deserializer<'de>
                 {
                     Self::deserialize(deserializer).map_err(|e| {
-                        ErrorReporter::report(DeserializationError::Custom {
+                        ErrorReporter::report(DeserializationErrorDetails::Custom {
                             message: e.to_string(),
                         });
                     })
@@ -30,7 +30,7 @@ macro_rules! impl_human_deserialize {
                 D: serde::Deserializer<'de>
             {
                 Self::deserialize(deserializer).map_err(|e| {
-                    ErrorReporter::report(DeserializationError::Custom {
+                    ErrorReporter::report(DeserializationErrorDetails::Custom {
                         message: e.to_string(),
                     });
                 })
@@ -83,7 +83,7 @@ where
         D: serde::Deserializer<'de>,
     {
         Self::deserialize(deserializer).map_err(|e| {
-            ErrorReporter::report(DeserializationError::Custom {
+            ErrorReporter::report(DeserializationErrorDetails::Custom {
                 message: e.to_string(),
             });
         })
@@ -100,7 +100,7 @@ where
         D: serde::Deserializer<'de>,
     {
         Self::deserialize(deserializer).map_err(|e| {
-            ErrorReporter::report(DeserializationError::Custom {
+            ErrorReporter::report(DeserializationErrorDetails::Custom {
                 message: e.to_string(),
             });
         })
@@ -118,7 +118,7 @@ where
         D: serde::Deserializer<'de>,
     {
         Self::deserialize(deserializer).map_err(|e| {
-            ErrorReporter::report(DeserializationError::Custom {
+            ErrorReporter::report(DeserializationErrorDetails::Custom {
                 message: e.to_string(),
             });
         })

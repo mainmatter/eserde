@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use crate::DeserializationError;
+use crate::{path::PathTracker, DeserializationError, DeserializationErrorDetails};
 
 /// The entrypoint for reporting errors that occurred during [`HumanDeserialize::human_deserialize`](crate::HumanDeserialize::human_deserialize).
 ///
@@ -22,6 +22,7 @@ impl ErrorReporter {
     /// In most cases, you don't need to call this method directly, as it's usually taken care of by the
     /// format-specific functions provided by `eserde`, such as [`eserde::json::from_str`](crate::json::from_str).
     pub fn start_deserialization() -> ErrorReporterGuard {
+        PathTracker::init();
         DESERIALIZATION_ERRORS.set(Some(Vec::new()));
         ErrorReporterGuard
     }
@@ -32,7 +33,11 @@ impl ErrorReporter {
     ///
     /// This method will panic if called outside of a deserialization operation.
     /// Check out [`ErrorReporter::start_deserialization`] for more information.
-    pub fn report(error: DeserializationError) {
+    pub fn report(details: DeserializationErrorDetails) {
+        let error = DeserializationError {
+            path: PathTracker::current_path(),
+            details,
+        };
         let success = DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
             if let Some(v) = v {
                 v.push(error);
@@ -112,6 +117,7 @@ impl Drop for ErrorReporterGuard {
                 *v = None;
             }
         });
+        PathTracker::try_unset();
     }
 }
 

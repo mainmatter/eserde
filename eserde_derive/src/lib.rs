@@ -71,7 +71,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
                     let #n_errors = ::eserde::reporter::ErrorReporter::n_errors();
                     let #companion_binding = <#companion_type_ident #ty_generics as ::eserde::_serde::Deserialize>::deserialize(__deserializer)
                         .map_err(|e| {
-                            ::eserde::reporter::ErrorReporter::report(::eserde::DeserializationError::Custom { message: e.to_string() });
+                            ::eserde::reporter::ErrorReporter::report(::eserde::DeserializationErrorDetails::Custom { message: e.to_string() });
                         })?;
                     #initialize_from_companion
                 }
