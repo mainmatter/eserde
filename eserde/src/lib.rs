@@ -12,6 +12,7 @@ pub use serde as _serde;
 pub mod _macro_impl;
 
 #[cfg(feature = "derive")]
+/// A derive macro to automatically implement [`HumanDeserialize`] and `serde::Deserialize` for a type.
 pub use eserde_derive::Deserialize;
 
 #[diagnostic::on_unimplemented(
@@ -21,6 +22,8 @@ pub use eserde_derive::Deserialize;
     Add `#[eserde(compat)]` on the field to instruct `eserde` to fallback to the vanilla deserialization logic for that type, \
     removing the `HumanDeserialize` requirement.\n"
 )]
+/// A variant of `serde::Deserialize` that accumulates as many errors as possible
+/// before returning them to the user.
 pub trait HumanDeserialize<'de>: Sized + serde::Deserialize<'de> {
     /// Deserialize this value using the given `serde` deserializer.
     ///
@@ -47,8 +50,14 @@ pub trait HumanDeserialize<'de>: Sized + serde::Deserialize<'de> {
 }
 
 #[derive(Debug)]
+/// An error that occurred during deserialization.
 pub struct DeserializationError {
+    /// The input path at which the error occurred, when available.
+    ///
+    /// E.g. if the error occurred while deserializing the sub-field `foo` of the top-level
+    /// field `bar`, the path would be `bar.foo`.
     pub path: Option<path::Path>,
+    /// What went wrong during deserialization.
     pub details: DeserializationErrorDetails,
 }
 
@@ -64,7 +73,9 @@ impl std::fmt::Display for DeserializationError {
 }
 
 #[derive(Debug)]
-/// An error that occurred during deserialization.
+/// Details as to what went wrong during deserialization.
+///
+/// Part of a [`DeserializationError`].
 pub enum DeserializationErrorDetails {
     /// A field was missing during deserialization.
     MissingField { field_name: &'static str },
