@@ -37,7 +37,7 @@ impl PathTracker {
     /// - There is nothing stashed, or
     /// - The current path is not a strict subsequence of the currently stashed path
     pub fn stash_current_path_for_error() {
-        LATEST_ERROR_PATH.with_borrow_mut(|stashed| {
+        PATH_ON_ERROR.with_borrow_mut(|stashed| {
             let current = Self::current_path();
             let Some(stashed) = stashed else {
                 *stashed = current;
@@ -53,7 +53,7 @@ impl PathTracker {
     }
 
     pub fn unstash_current_path_for_error() -> Option<Path> {
-        LATEST_ERROR_PATH.take()
+        PATH_ON_ERROR.take()
     }
 
     pub fn try_unset() {
@@ -69,5 +69,14 @@ thread_local! {
     /// The path to the value we're currently trying to deserialize.
     static CURRENT_PATH: RefCell<Option<Vec<Segment>>> = RefCell::new(None);
 
-    static LATEST_ERROR_PATH: RefCell<Option<Path>> = RefCell::new(None);
+    /// A snapshot of the current path, captured when an error occurred.
+    ///
+    /// For types that implement [`HumanDeserialize`], this is not necessary
+    /// since we manually capture the current path when reporting the error.
+    ///
+    /// That's not the case for types that only implement `serde`'s Serialize
+    /// though. In those cases, we need to save the current path here
+    /// in order to retrieve it later when we get back into `eserde`'s territory
+    /// and try to report the error.
+    static PATH_ON_ERROR: RefCell<Option<Path>> = RefCell::new(None);
 }
