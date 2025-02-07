@@ -486,18 +486,17 @@ where
         let mut variant = None;
         let outcome = self
             .delegate
-            .variant_seed(CaptureKey::new(seed, &mut variant))
-            .map(move |(v, vis)| (v, WrapVariant::new(vis)));
+            .variant_seed(CaptureKey::new(seed, &mut variant));
 
+        let pop_path_segment_before_exit = variant.is_some();
         if let Some(variant) = variant {
-            println!("Pushing from enum");
             PathTracker::push(Segment::Enum { variant });
         }
         if outcome.is_err() {
             PathTracker::stash_current_path_for_error();
         }
 
-        outcome
+        outcome.map(move |(v, vis)| (v, WrapVariant::new(vis, pop_path_segment_before_exit)))
     }
 }
 
@@ -510,7 +509,9 @@ where
 
     fn unit_variant(self) -> Result<(), X::Error> {
         let o = self.delegate.unit_variant();
-        PathTracker::pop();
+        if self.pop_path_segment_before_exit {
+            PathTracker::pop();
+        }
         o
     }
 
@@ -519,7 +520,9 @@ where
         T: DeserializeSeed<'de>,
     {
         let outcome = self.delegate.newtype_variant_seed(TrackedSeed::new(seed));
-        PathTracker::pop();
+        if self.pop_path_segment_before_exit {
+            PathTracker::pop();
+        }
         outcome
     }
 
@@ -528,7 +531,9 @@ where
         V: Visitor<'de>,
     {
         let outcome = self.delegate.tuple_variant(len, Wrap::new(visitor));
-        PathTracker::pop();
+        if self.pop_path_segment_before_exit {
+            PathTracker::pop();
+        }
         outcome
     }
 
@@ -541,7 +546,9 @@ where
         V: Visitor<'de>,
     {
         let outcome = self.delegate.struct_variant(fields, Wrap::new(visitor));
-        PathTracker::pop();
+        if self.pop_path_segment_before_exit {
+            PathTracker::pop();
+        }
         outcome
     }
 }
@@ -1143,6 +1150,7 @@ where
 struct MapAccess<X> {
     delegate: X,
     key: Option<String>,
+    pop_path_segment_on_value: bool,
 }
 
 impl<X> MapAccess<X> {
@@ -1150,6 +1158,7 @@ impl<X> MapAccess<X> {
         MapAccess {
             delegate,
             key: None,
+            pop_path_segment_on_value: false,
         }
     }
 }
@@ -1168,6 +1177,7 @@ where
         let outcome = self.delegate.next_key_seed(CaptureKey::new(seed, key));
         if let Some(key) = key.take() {
             PathTracker::push(Segment::Map { key });
+            self.pop_path_segment_on_value = true;
         }
         if outcome.is_err() {
             PathTracker::stash_current_path_for_error();
@@ -1183,7 +1193,10 @@ where
         if outcome.is_err() {
             PathTracker::stash_current_path_for_error();
         }
-        PathTracker::pop();
+        if self.pop_path_segment_on_value {
+            PathTracker::pop();
+            self.pop_path_segment_on_value = false;
+        }
         outcome
     }
 

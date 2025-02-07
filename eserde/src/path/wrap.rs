@@ -6,6 +6,7 @@ pub struct Wrap<X> {
 // Wrapper that attaches context to a `VariantAccess`.
 pub struct WrapVariant<X> {
     pub(crate) delegate: X,
+    pub(crate) pop_path_segment_before_exit: bool,
 }
 
 impl<X> Wrap<X> {
@@ -15,7 +16,10 @@ impl<X> Wrap<X> {
 }
 
 impl<X> WrapVariant<X> {
-    pub(crate) fn new(delegate: X) -> Self {
-        WrapVariant { delegate }
+    pub(crate) fn new(delegate: X, pop_path_segment_before_exit: bool) -> Self {
+        WrapVariant {
+            delegate,
+            pop_path_segment_before_exit,
+        }
     }
 }
