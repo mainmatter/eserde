@@ -1,4 +1,4 @@
-use emit::{initialize_from_companion, initialize_from_shadow, ImplDeserGenerics};
+use emit::{collect_missing_errors, initialize_from_shadow, ImplDeserGenerics};
 use indexmap::IndexSet;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
@@ -36,9 +36,8 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let companion_binding = format_ident!("__companion");
     let deserializer_generic_ident = format_ident!("__D");
     let n_errors = format_ident!("__n_errors");
-    let initialize_from_companion = initialize_from_companion(
+    let collect_missing_errors = collect_missing_errors(
         &input.data,
-        &format_ident!("Self"),
         &companion_type_ident,
         &companion_binding,
         &n_errors,
@@ -62,7 +61,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
             impl #human_impl_generics ::eserde::EDeserialize<'de> for #name #human_ty_generics
             #human_where_clause
             {
-                fn deserialize_for_errors<#deserializer_generic_ident>(__deserializer: #deserializer_generic_ident) -> Result<Self, ()>
+                fn deserialize_for_errors<#deserializer_generic_ident>(__deserializer: #deserializer_generic_ident) -> Result<(), ()>
                 where
                     #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
                 {
@@ -71,7 +70,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
                         .map_err(|e| {
                             ::eserde::reporter::ErrorReporter::report(::eserde::DeserializationErrorDetails::Custom { message: e.to_string() });
                         })?;
-                    #initialize_from_companion
+                    #collect_missing_errors
                 }
             }
 

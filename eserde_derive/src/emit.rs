@@ -157,22 +157,15 @@ pub fn initialize_from_shadow(
     }
 }
 
-/// Initialize the target type from the companion type, assigning each field from the shadow companion to the
-/// corresponding field on the target type in case of success, otherwise accumulating errors.
-pub fn initialize_from_companion(
+/// Walk all fields on the companion types to report errors about missing values, if any.
+pub fn collect_missing_errors(
     input: &Data,
-    type_ident: &syn::Ident,
     companion_type: &syn::Ident,
     companion_binding: &syn::Ident,
     n_errors: &syn::Ident,
 ) -> proc_macro2::TokenStream {
     match input {
         Data::Struct(data) => {
-            let assign = data.fields.members().map(|field| {
-                quote! {
-                    #field: #companion_binding.#field.value().unwrap()
-                }
-            });
             let accumulate = data.fields.members().map(|field| {
                 let field_str = match &field {
                     syn::Member::Named(ident) => ident.to_string(),
@@ -187,11 +180,10 @@ pub fn initialize_from_companion(
                 #(#accumulate)*
                 let __n_new_errors = ::eserde::reporter::ErrorReporter::n_errors();
                 if __n_new_errors > #n_errors {
-                    return Err(());
+                    Err(())
+                } else {
+                    Ok(())
                 }
-                Ok(#type_ident {
-                    #(#assign),*
-                })
             }
         }
         Data::Enum(e) => {
@@ -200,7 +192,7 @@ pub fn initialize_from_companion(
 
                 if matches!(variant.fields, syn::Fields::Unit) {
                     return quote! {
-                        #companion_type::#variant_ident => #type_ident::#variant_ident
+                        #companion_type::#variant_ident => Ok(())
                     };
                 }
                 let bindings: Vec<_> = variant
@@ -219,15 +211,6 @@ pub fn initialize_from_companion(
                                 #field: #v
                             }
                         });
-                let assign = variant
-                    .fields
-                    .members()
-                    .zip(bindings.iter())
-                    .map(|(field, v)| {
-                        quote! {
-                            #field: #v.value().unwrap()
-                        }
-                    });
                 let accumulate = variant
                     .fields
                     .members()
@@ -247,16 +230,17 @@ pub fn initialize_from_companion(
                         #(#accumulate)*
                         let __n_new_errors = ::eserde::reporter::ErrorReporter::n_errors();
                         if __n_new_errors > #n_errors {
-                            return Err(());
+                            Err(())
+                        } else {
+                            Ok(())
                         }
-                        #type_ident::#variant_ident { #(#assign),* }
                     }
                 }
             });
             quote! {
-                Ok(match #companion_binding {
+                match #companion_binding {
                     #(#variants),*
-                })
+                }
             }
         }
         Data::Union(_) => unreachable!(),

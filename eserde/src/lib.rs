@@ -22,29 +22,43 @@ pub use eserde_derive::Deserialize;
     Add `#[eserde(compat)]` on the field to instruct `eserde` to fallback to the vanilla deserialization logic for that type, \
     removing the `EDeserialize` requirement.\n"
 )]
-/// A variant of `serde::Deserialize` that accumulates as many errors as possible
+/// A companion to `serde::Deserialize`, designed to accumulate as many deserialization errors as possible
 /// before returning them to the user.
+///
+/// # How to implement `EDeserialize`
+///
+/// `EDeserialize` is automatically derived for your types if you annotate them with `#[derive(eserde::Deserialize)]`.
+/// The same derive invocation will also implement `serde::Deserialize` for your types.
+///
+/// # Where does `EDeserialize` fit in?
+///
+/// `serde::Deserialize` is designed to abort deserialization
+/// as soon as an error is encountered.
+/// This is optimal for speed, but it can result in a frustrating
+/// experience for the user, who has to fix errors one by one.
+///
+/// `EDeserialize`, instead, is designed to be invoked **after** `serde::Deserialize` has
+/// failed to successfully deserialize the value.
+///
+/// `EDeserialize` will try accumulate as many deserialization errors as possible.
+/// You can then return those errors to the user all at once, enabling them to
+/// fix the payload issues faster.
 pub trait EDeserialize<'de>: Sized + serde::Deserialize<'de> {
-    /// Deserialize this value using the given `serde` deserializer.
+    /// Visit the input to accumulate as many deserialization errors as possible.
     ///
-    /// # `EDeserialize` vs `serde::Deserialize`
+    /// If no error occurred during deserialization, this function will return an empty `Ok` variant.
+    /// If there were errors, instead, it will return an empty `Err` variant.
     ///
-    /// `serde::Deserialize` is designed to abort deserialization
-    /// as soon as an error is encountered.
-    /// This is optimal for speed, but it can result in a frustrating
-    /// experience for the user, who has to fix errors one by one.
+    /// Errors are accumulated in thread-local storage.
+    /// You can retrieve those errors via [`ErrorReporter::take_errors`](crate::reporter::ErrorReporter::take_errors).
     ///
-    /// `EDeserialize`, instead, tries to accumulate as many errors
-    /// as possible before returning them to the user, so that they can fix them all
-    /// in one go.
-    /// As a result, `EDeserialize` is likely to be
-    /// slower than `serde::Deserialize`.
+    /// # Panics
     ///
-    /// # Errors
+    /// It'll panic if [`ErrorReporter::init_deserialization`] hasn't been invoked beforehand.
     ///
-    /// If deserialization fails, this function will return an `Err(())`.
-    /// To retrieve the error details, check the [`ErrorReporter::take_errors`](crate::reporter::ErrorReporter::take_errors) function.
-    fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
+    /// [`ErrorReporter::init_deserialization`]: crate::reporter::ErrorReporter::init_deserialization
+    /// [`ErrorReporter::take_errors`]: crate::reporter::ErrorReporter::take_errors
+    fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
     where
         D: serde::Deserializer<'de>;
 }

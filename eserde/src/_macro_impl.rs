@@ -1,8 +1,10 @@
+use std::marker::PhantomData;
+
 use crate::{reporter::ErrorReporter, DeserializationErrorDetails, EDeserialize};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MaybeInvalidOrMissing<T> {
-    Valid(T),
+    Valid(PhantomData<T>),
     Invalid,
     Missing,
 }
@@ -11,13 +13,6 @@ impl<T> MaybeInvalidOrMissing<T> {
     pub fn push_error_if_missing(&self, field_name: &'static str) {
         if let Self::Missing = self {
             ErrorReporter::report(DeserializationErrorDetails::MissingField { field_name });
-        }
-    }
-
-    pub fn value(self) -> Option<T> {
-        match self {
-            Self::Valid(v) => Some(v),
-            _ => None,
         }
     }
 }
@@ -37,7 +32,7 @@ where
         D: serde::Deserializer<'de>,
     {
         let v = match T::deserialize(deserializer) {
-            Ok(value) => Self::Valid(value),
+            Ok(_) => Self::Valid(Default::default()),
             Err(error) => {
                 ErrorReporter::report(DeserializationErrorDetails::Custom {
                     message: error.to_string(),
@@ -57,14 +52,14 @@ where
     T: EDeserialize<'de>,
 {
     let v = match T::deserialize_for_errors(deserializer) {
-        Ok(value) => MaybeInvalidOrMissing::Valid(value),
+        Ok(_) => MaybeInvalidOrMissing::Valid(Default::default()),
         Err(_) => MaybeInvalidOrMissing::Invalid,
     };
     Ok(v)
 }
 
 pub enum MaybeInvalid<T> {
-    Valid(T),
+    Valid(PhantomData<T>),
     Invalid,
 }
 
@@ -73,18 +68,11 @@ where
     T: Default,
 {
     fn default() -> Self {
-        MaybeInvalid::Valid(T::default())
+        MaybeInvalid::Valid(Default::default())
     }
 }
 
 impl<T> MaybeInvalid<T> {
-    pub fn value(self) -> Option<T> {
-        match self {
-            Self::Valid(v) => Some(v),
-            _ => None,
-        }
-    }
-
     /// Added for simplicity in order to avoid having to distinguish in the macro
     /// between `MaybeInvalid` and `MaybeInvalidOrMissing`.
     /// To be removed in the future.
@@ -100,7 +88,7 @@ where
         D: serde::Deserializer<'de>,
     {
         let v = match T::deserialize(deserializer) {
-            Ok(value) => Self::Valid(value),
+            Ok(_) => Self::Valid(Default::default()),
             Err(error) => {
                 ErrorReporter::report(DeserializationErrorDetails::Custom {
                     message: error.to_string(),
@@ -120,7 +108,7 @@ where
     T: EDeserialize<'de>,
 {
     let v = match T::deserialize_for_errors(deserializer) {
-        Ok(value) => MaybeInvalid::Valid(value),
+        Ok(_) => MaybeInvalid::Valid(Default::default()),
         Err(_) => MaybeInvalid::Invalid,
     };
     Ok(v)

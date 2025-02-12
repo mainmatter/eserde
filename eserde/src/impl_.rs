@@ -6,11 +6,11 @@ macro_rules! impl_edeserialize {
     ($($t:ty),* $(,)?) => {
         $(
             impl<'de> EDeserialize<'de> for $t {
-                fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
+                fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
                 where
                     D: serde::Deserializer<'de>
                 {
-                    Self::deserialize(deserializer).map_err(|e| {
+                    Self::deserialize(deserializer).map(|_| ()).map_err(|e| {
                         ErrorReporter::report(DeserializationErrorDetails::Custom {
                             message: e.to_string(),
                         });
@@ -25,11 +25,11 @@ macro_rules! impl_edeserialize {
         where
             T: EDeserialize<'de> + $($bounds)*,
         {
-            fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
+            fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
             where
                 D: serde::Deserializer<'de>
             {
-                Self::deserialize(deserializer).map_err(|e| {
+                Self::deserialize(deserializer).map(|_| ()).map_err(|e| {
                     ErrorReporter::report(DeserializationErrorDetails::Custom {
                         message: e.to_string(),
                     });
@@ -78,11 +78,11 @@ where
     K: EDeserialize<'de> + std::cmp::Ord,
     V: EDeserialize<'de>,
 {
-    fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
+    fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
     where
         D: serde::Deserializer<'de>,
     {
-        Self::deserialize(deserializer).map_err(|e| {
+        Self::deserialize(deserializer).map(|_| ()).map_err(|e| {
             ErrorReporter::report(DeserializationErrorDetails::Custom {
                 message: e.to_string(),
             });
@@ -95,11 +95,11 @@ where
     K: EDeserialize<'de> + std::cmp::Eq + std::hash::Hash,
     V: EDeserialize<'de>,
 {
-    fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
+    fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
     where
         D: serde::Deserializer<'de>,
     {
-        Self::deserialize(deserializer).map_err(|e| {
+        Self::deserialize(deserializer).map(|_| ()).map_err(|e| {
             ErrorReporter::report(DeserializationErrorDetails::Custom {
                 message: e.to_string(),
             });
@@ -113,11 +113,11 @@ where
     T: ToOwned + ?Sized,
     T::Owned: EDeserialize<'de>,
 {
-    fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
+    fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
     where
         D: serde::Deserializer<'de>,
     {
-        Self::deserialize(deserializer).map_err(|e| {
+        Self::deserialize(deserializer).map(|_| ()).map_err(|e| {
             ErrorReporter::report(DeserializationErrorDetails::Custom {
                 message: e.to_string(),
             });
