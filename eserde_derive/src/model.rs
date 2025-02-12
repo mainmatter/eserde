@@ -32,7 +32,7 @@ impl ShadowType {
 /// This type should never fail to deserialize, thus allowing us to collect all errors in one go.
 pub struct PermissiveCompanionType {
     pub ty_: DeriveInput,
-    /// Generic type parameters that must be constrained with `::eserde::HumanDeserialize` instead of `::serde::Deserialize`.
+    /// Generic type parameters that must be constrained with `::eserde::EDeserialize` instead of `::serde::Deserialize`.
     pub eserde_aware_generics: IndexSet<syn::Ident>,
 }
 
@@ -158,7 +158,7 @@ impl PermissiveCompanionType {
             // That's unnecessary, so we override the bounds here using `#[serde(bound(deserialize = "..."))]`.
             .map(|param| {
                 if eserde_aware_generics.contains(&param.ident) {
-                    format!("{}: ::eserde::HumanDeserialize<'de>", param.ident)
+                    format!("{}: ::eserde::EDeserialize<'de>", param.ident)
                 } else {
                     format!("{}: ::eserde::_serde::Deserialize<'de>", param.ident)
                 }

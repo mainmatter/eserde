@@ -71,7 +71,7 @@ thread_local! {
 
     /// A snapshot of the current path, captured when an error occurred.
     ///
-    /// For types that implement [`HumanDeserialize`], this is not necessary
+    /// For types that implement [`EDeserialize`], this is not necessary
     /// since we manually capture the current path when reporting the error.
     ///
     /// That's not the case for types that only implement `serde`'s Serialize

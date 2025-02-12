@@ -48,7 +48,7 @@ impl<'a> ImplDeserGenerics<'a> {
             // TODO: Take into account the `#[serde(bound)]` attribute https://serde.rs/container-attrs.html#bound
             for ty_param in input.generics.type_params() {
                 let predicate = if eserde_aware_generics.contains(&ty_param.ident) {
-                    syn::parse_quote! { #ty_param: ::eserde::HumanDeserialize<'de> }
+                    syn::parse_quote! { #ty_param: ::eserde::EDeserialize<'de> }
                 } else {
                     syn::parse_quote! { #ty_param: ::eserde::_serde::Deserialize<'de> }
                 };

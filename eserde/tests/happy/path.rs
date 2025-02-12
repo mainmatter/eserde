@@ -1,12 +1,12 @@
 #![allow(clippy::unreadable_literal, dead_code)]
-use eserde::{Deserialize, HumanDeserialize};
+use eserde::{Deserialize, EDeserialize};
 use std::collections::BTreeMap as Map;
 use std::fmt::Debug;
 
 #[track_caller]
 fn test<'de, T>(json: &'de str, expected: &str)
 where
-    T: HumanDeserialize<'de> + Debug,
+    T: EDeserialize<'de> + Debug,
 {
     let result: Result<T, _> = eserde::json::from_str(json);
     let errors = result.unwrap_err();
@@ -19,7 +19,7 @@ where
 #[track_caller]
 fn test_many<'de, T>(json: &'de str, expected: &[&str])
 where
-    T: HumanDeserialize<'de> + Debug,
+    T: EDeserialize<'de> + Debug,
 {
     let result: Result<T, _> = eserde::json::from_str(json);
     let errors = result.unwrap_err();

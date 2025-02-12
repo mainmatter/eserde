@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use crate::{path::PathTracker, DeserializationError, DeserializationErrorDetails};
 
-/// The entrypoint for reporting errors that occurred during [`HumanDeserialize::human_deserialize`](crate::HumanDeserialize::human_deserialize).
+/// The entrypoint for reporting errors that occurred during [`EDeserialize::human_deserialize`](crate::EDeserialize::human_deserialize).
 ///
 /// Check out [`ErrorReporter::start_deserialization`] for more information.
 pub struct ErrorReporter;
@@ -12,7 +12,7 @@ impl ErrorReporter {
         deserialization operation to ensure that errors are correctly reported."]
     /// Kick-off a deserialization operation.
     ///
-    /// This method must be invoked before calling [`HumanDeserialize::human_deserialize`](crate::HumanDeserialize::human_deserialize),
+    /// This method must be invoked before calling [`EDeserialize::human_deserialize`](crate::EDeserialize::human_deserialize),
     /// otherwise the deserializer will panic when trying to report errors.
     ///
     /// The returned guard must be kept alive for the duration of the whole deserialization operation.
@@ -52,7 +52,7 @@ impl ErrorReporter {
             //   Or does that have some weird side-effects?
             panic!("Attempted to report an error outside of a deserialization operation. \
                 You can't call `ErrorReporter::report_error` without first calling `ErrorReporter::start_deserialization`. \
-                This error may be triggered by a top-level invocation of `HumanDeserialize::human_deserialize` without \
+                This error may be triggered by a top-level invocation of `EDeserialize::human_deserialize` without \
                 a preceding call to `ErrorReporter::start_deserialization`. \
                 This initialization step is usually taken care of by the format-specific functions provided by `eserde`, \
                 such as `eserde::json::from_str`. If you're implementing your own deserialization logic, you \
@@ -74,7 +74,7 @@ impl ErrorReporter {
             .expect(
                 "Attempted to collect deserialization errors outside of a deserialization operation. \
                 You can't call `ErrorReporter::take_errors` without first calling `ErrorReporter::start_deserialization`. \
-                This error may be triggered by a top-level invocation of `HumanDeserialize::human_deserialize` without \
+                This error may be triggered by a top-level invocation of `EDeserialize::human_deserialize` without \
                 a preceding call to `ErrorReporter::start_deserialization`. \
                 This initialization step is usually taken care of by the format-specific functions provided by `eserde`, \
                 such as `eserde::json::from_str`. If you're implementing your own deserialization logic, you \
@@ -92,7 +92,7 @@ impl ErrorReporter {
             .expect(
                 "Attempted to count the number of deserialization errors outside of a deserialization operation. \
                 You can't call `ErrorReporter::take_errors` without first calling `ErrorReporter::start_deserialization`. \
-                This error may be triggered by a top-level invocation of `HumanDeserialize::human_deserialize` without \
+                This error may be triggered by a top-level invocation of `EDeserialize::human_deserialize` without \
                 a preceding call to `ErrorReporter::start_deserialization`. \
                 This initialization step is usually taken care of by the format-specific functions provided by `eserde`, \
                 such as `eserde::json::from_str`. If you're implementing your own deserialization logic, you \

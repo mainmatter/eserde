@@ -30,10 +30,8 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
         shadow_type_ident,
     );
 
-    let companion_type = model::PermissiveCompanionType::new(
-        format_ident!("__ImplHumanDeserializeFor{}", name),
-        &input,
-    );
+    let companion_type =
+        model::PermissiveCompanionType::new(format_ident!("__ImplEDeserializeFor{}", name), &input);
     let companion_type_ident = &companion_type.ty_.ident;
     let companion_binding = format_ident!("__companion");
     let deserializer_generic_ident = format_ident!("__D");
@@ -61,10 +59,10 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
             #shadow_type
 
             #[automatically_derived]
-            impl #human_impl_generics ::eserde::HumanDeserialize<'de> for #name #human_ty_generics
+            impl #human_impl_generics ::eserde::EDeserialize<'de> for #name #human_ty_generics
             #human_where_clause
             {
-                fn human_deserialize<#deserializer_generic_ident>(__deserializer: #deserializer_generic_ident) -> Result<Self, ()>
+                fn deserialize_for_errors<#deserializer_generic_ident>(__deserializer: #deserializer_generic_ident) -> Result<Self, ()>
                 where
                     #deserializer_generic_ident: ::eserde::_serde::Deserializer<'de>,
                 {

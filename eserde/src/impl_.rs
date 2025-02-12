@@ -1,12 +1,12 @@
-use crate::{reporter::ErrorReporter, DeserializationErrorDetails, HumanDeserialize};
+use crate::{reporter::ErrorReporter, DeserializationErrorDetails, EDeserialize};
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-macro_rules! impl_human_deserialize {
+macro_rules! impl_edeserialize {
     ($($t:ty),* $(,)?) => {
         $(
-            impl<'de> HumanDeserialize<'de> for $t {
-                fn human_deserialize<D>(deserializer: D) -> Result<Self, ()>
+            impl<'de> EDeserialize<'de> for $t {
+                fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
                 where
                     D: serde::Deserializer<'de>
                 {
@@ -21,11 +21,11 @@ macro_rules! impl_human_deserialize {
     };
     // For generic types with a single type parameter
     ($t:ident, 1, $($bounds:tt)*) => {
-        impl<'de, T> HumanDeserialize<'de> for $t<T>
+        impl<'de, T> EDeserialize<'de> for $t<T>
         where
-            T: HumanDeserialize<'de> + $($bounds)*,
+            T: EDeserialize<'de> + $($bounds)*,
         {
-            fn human_deserialize<D>(deserializer: D) -> Result<Self, ()>
+            fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
             where
                 D: serde::Deserializer<'de>
             {
@@ -43,7 +43,7 @@ macro_rules! impl_human_deserialize {
 }
 
 // Primitive types
-impl_human_deserialize!(
+impl_edeserialize!(
     bool,
     i8,
     i16,
@@ -66,19 +66,19 @@ impl_human_deserialize!(
 );
 
 // Generic collections
-impl_human_deserialize!(Option, 1,);
-impl_human_deserialize!(Vec, 1,);
-impl_human_deserialize!(HashSet, 1, std::hash::Hash + std::cmp::Eq);
-impl_human_deserialize!(BTreeSet, 1, std::cmp::Ord);
+impl_edeserialize!(Option, 1,);
+impl_edeserialize!(Vec, 1,);
+impl_edeserialize!(HashSet, 1, std::hash::Hash + std::cmp::Eq);
+impl_edeserialize!(BTreeSet, 1, std::cmp::Ord);
 
 // Map types
 
-impl<'de, K, V> HumanDeserialize<'de> for BTreeMap<K, V>
+impl<'de, K, V> EDeserialize<'de> for BTreeMap<K, V>
 where
-    K: HumanDeserialize<'de> + std::cmp::Ord,
-    V: HumanDeserialize<'de>,
+    K: EDeserialize<'de> + std::cmp::Ord,
+    V: EDeserialize<'de>,
 {
-    fn human_deserialize<D>(deserializer: D) -> Result<Self, ()>
+    fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
     where
         D: serde::Deserializer<'de>,
     {
@@ -90,12 +90,12 @@ where
     }
 }
 
-impl<'de, K, V> HumanDeserialize<'de> for HashMap<K, V>
+impl<'de, K, V> EDeserialize<'de> for HashMap<K, V>
 where
-    K: HumanDeserialize<'de> + std::cmp::Eq + std::hash::Hash,
-    V: HumanDeserialize<'de>,
+    K: EDeserialize<'de> + std::cmp::Eq + std::hash::Hash,
+    V: EDeserialize<'de>,
 {
-    fn human_deserialize<D>(deserializer: D) -> Result<Self, ()>
+    fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
     where
         D: serde::Deserializer<'de>,
     {
@@ -108,12 +108,12 @@ where
 }
 
 // Special case for Cow due to additional bounds
-impl<'de, 'a, T> HumanDeserialize<'de> for std::borrow::Cow<'a, T>
+impl<'de, 'a, T> EDeserialize<'de> for std::borrow::Cow<'a, T>
 where
     T: ToOwned + ?Sized,
-    T::Owned: HumanDeserialize<'de>,
+    T::Owned: EDeserialize<'de>,
 {
-    fn human_deserialize<D>(deserializer: D) -> Result<Self, ()>
+    fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
     where
         D: serde::Deserializer<'de>,
     {

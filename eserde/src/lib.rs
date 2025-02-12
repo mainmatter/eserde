@@ -12,39 +12,39 @@ pub use serde as _serde;
 pub mod _macro_impl;
 
 #[cfg(feature = "derive")]
-/// A derive macro to automatically implement [`HumanDeserialize`] and `serde::Deserialize` for a type.
+/// A derive macro to automatically implement [`EDeserialize`] and `serde::Deserialize` for a type.
 pub use eserde_derive::Deserialize;
 
 #[diagnostic::on_unimplemented(
-    note = "Annotate the problematic type with `#[derive(eserde::HumanDeserialize)]` to implement the missing trait.\n\n\
+    note = "Annotate the problematic type with `#[derive(eserde::EDeserialize)]` to implement the missing trait.\n\n\
     It may not always be possible to add the annotation, e.g. if the type is defined in another crate that you don't control.\n\
     If that's the case, and you're using that type for one of your fields, you can annotate the field instead!\n\
     Add `#[eserde(compat)]` on the field to instruct `eserde` to fallback to the vanilla deserialization logic for that type, \
-    removing the `HumanDeserialize` requirement.\n"
+    removing the `EDeserialize` requirement.\n"
 )]
 /// A variant of `serde::Deserialize` that accumulates as many errors as possible
 /// before returning them to the user.
-pub trait HumanDeserialize<'de>: Sized + serde::Deserialize<'de> {
+pub trait EDeserialize<'de>: Sized + serde::Deserialize<'de> {
     /// Deserialize this value using the given `serde` deserializer.
     ///
-    /// # `HumanDeserialize` vs `serde::Deserialize`
+    /// # `EDeserialize` vs `serde::Deserialize`
     ///
     /// `serde::Deserialize` is designed to abort deserialization
     /// as soon as an error is encountered.
     /// This is optimal for speed, but it can result in a frustrating
     /// experience for the user, who has to fix errors one by one.
     ///
-    /// `HumanDeserialize`, instead, tries to accumulate as many errors
+    /// `EDeserialize`, instead, tries to accumulate as many errors
     /// as possible before returning them to the user, so that they can fix them all
     /// in one go.
-    /// As a result, `HumanDeserialize` is likely to be
+    /// As a result, `EDeserialize` is likely to be
     /// slower than `serde::Deserialize`.
     ///
     /// # Errors
     ///
     /// If deserialization fails, this function will return an `Err(())`.
     /// To retrieve the error details, check the [`ErrorReporter::take_errors`](crate::reporter::ErrorReporter::take_errors) function.
-    fn human_deserialize<D>(deserializer: D) -> Result<Self, ()>
+    fn deserialize_for_errors<D>(deserializer: D) -> Result<Self, ()>
     where
         D: serde::Deserializer<'de>;
 }

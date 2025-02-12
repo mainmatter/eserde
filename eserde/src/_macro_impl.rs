@@ -1,4 +1,4 @@
-use crate::{reporter::ErrorReporter, DeserializationErrorDetails, HumanDeserialize};
+use crate::{reporter::ErrorReporter, DeserializationErrorDetails, EDeserialize};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MaybeInvalidOrMissing<T> {
@@ -54,9 +54,9 @@ pub fn maybe_invalid_or_missing_human_deserialize<'de, D, T>(
 ) -> Result<MaybeInvalidOrMissing<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
-    T: HumanDeserialize<'de>,
+    T: EDeserialize<'de>,
 {
-    let v = match T::human_deserialize(deserializer) {
+    let v = match T::deserialize_for_errors(deserializer) {
         Ok(value) => MaybeInvalidOrMissing::Valid(value),
         Err(_) => MaybeInvalidOrMissing::Invalid,
     };
@@ -117,9 +117,9 @@ pub fn maybe_invalid_human_deserialize<'de, D, T>(
 ) -> Result<MaybeInvalid<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
-    T: HumanDeserialize<'de>,
+    T: EDeserialize<'de>,
 {
-    let v = match T::human_deserialize(deserializer) {
+    let v = match T::deserialize_for_errors(deserializer) {
         Ok(value) => MaybeInvalid::Valid(value),
         Err(_) => MaybeInvalid::Invalid,
     };
