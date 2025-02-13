@@ -8,7 +8,8 @@
 
 Don't stop at the first deserialization error.
 
-> ℹ️ This is a [Mainmatter](https://mainmatter.com/rust-consulting/) project.
+> [!NOTE]
+> This project has been created by [Mainmatter](https://mainmatter.com/rust-consulting/).  
 > Check out our [landing page](https://mainmatter.com/rust-consulting/) if you're looking for Rust consulting or training!
 
 ## The problem
