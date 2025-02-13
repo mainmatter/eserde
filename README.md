@@ -214,3 +214,8 @@ The key difference: validation would be performed _as part of_ the deserializati
 remember to call `.validate()` afterwards.
 
 <!-- cargo-rdme end -->
+
+# License
+
+Copyright © 2025- Mainmatter GmbH (https://mainmatter.com), released under the
+[MIT](./LICENSE-MIT) and [Apache](./LICENSE-APACHE) licenses.
