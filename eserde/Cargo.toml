@@ -30,7 +30,7 @@ itoa = { workspace = true }
 # is compatible with exactly one eserde release because the generated code
 # involves nonpublic APIs which are not bound by semver.
 [target.'cfg(any())'.dependencies]
-eserde_derive = { version = "=0.1.0", path = "../eserde_derive" }
+eserde_derive = { version = "=0.1.1", path = "../eserde_derive" }
 
 [dev-dependencies]
 eserde = { path = ".", features = ["json"] }
