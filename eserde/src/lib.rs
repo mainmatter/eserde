@@ -2,6 +2,9 @@
 //!
 //! Don't stop at the first deserialization error.
 //!
+//! > ℹ️ This is a [Mainmatter](https://mainmatter.com/rust-consulting/) project.
+//! > Check out our [landing page](https://mainmatter.com/rust-consulting/) if you're looking for Rust consulting or training!
+//!
 //! ## The problem
 //!
 //! [`serde`](https://serde.rs) is **the** Rust library for (de)serialization.\

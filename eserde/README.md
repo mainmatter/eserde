@@ -2,22 +2,16 @@
 [![Documentation](https://img.shields.io/docsrs/eserde)](https://docs.rs/eserde)
 [![Downloads crates.io](https://img.shields.io/crates/d/eserde.svg?label=crates.io%20downloads)](https://crates.io/crates/eserde)
 
+<!-- cargo-rdme start -->
+
 # eserde
 
 Don't stop at the first deserialization error.
 
-> [!NOTE]
->
-> This project has been created by [Mainmatter](https://mainmatter.com/rust-consulting/).
+> ℹ️ This is a [Mainmatter](https://mainmatter.com/rust-consulting/) project.
 > Check out our [landing page](https://mainmatter.com/rust-consulting/) if you're looking for Rust consulting or training!
 
-<!-- cargo-rdme start -->
-
-## eserde
-
-Don't stop at the first deserialization error.
-
-### The problem
+## The problem
 
 [`serde`](https://serde.rs) is **the** Rust library for (de)serialization.\
 There's a catch, though: `serde` is designed to abort deserialization as soon as an error occurs.
@@ -38,7 +32,7 @@ required to converge to a well-formed payload.
 
 That's the problem `eserde` was born to solve.
 
-### Case study: an invalid JSON payload
+## Case study: an invalid JSON payload
 
 Let's consider this schema as our reference example:
 
@@ -121,7 +115,7 @@ assert_eq!(
 Much better, isn't it?\
 We can now inform the users _in one go_ that they have to fix three different schema violations.
 
-### Adopting `eserde`
+## Adopting `eserde`
 
 To use `eserde` in your projects, add the following dependencies to your `Cargo.toml`:
 
@@ -136,7 +130,7 @@ You then have to:
 - Replace all instances of `#[derive(serde::Deserialize)]` with `#[derive(eserde::Deserialize)]`
 - Switch to an `eserde`-based deserialization function
 
-#### JSON
+### JSON
 
 `eserde` provides first-class support for JSON deserialization, gated behind the `json` Cargo feature.
 
@@ -154,7 +148,7 @@ If you're working with JSON:
 `eserde::json` doesn't support deserializing from a reader, i.e. there is no equivalent to
 `serde_json::from_reader`.
 
-#### Other formats
+### Other formats
 
 The approach used by `eserde` is compatible, in principle, with all existing `serde`-based
 deserializers.\
@@ -162,7 +156,7 @@ Refer to [the source code of `eserde::json::from_str`](https://github.com/mainma
 as a blueprint to follow for building an `eserde`-powered deserialization function
 for another format.
 
-### Compatibility
+## Compatibility
 
 `eserde` is designed to be maximally compatible with `serde`.
 
@@ -188,7 +182,7 @@ struct Point {
 
 Check out the documentation of `eserde`'s derive macro for more details.
 
-### Limitations and downsides
+## Limitations and downsides
 
 `eserde` is a new library—there may be issues and bugs that haven't been uncovered yet.
 Test it thoroughly before using it in production. If you encounter any problems, please
@@ -205,7 +199,7 @@ Apart from defects, there are some downsides inherent in `eserde`'s design:
 We believe the trade-off is worthwhile for user-facing payloads, but you should walk in with your
 eyes wide open.
 
-### Future plans
+## Future plans
 
 We plan to add first-class support for more data formats, in particular YAML and TOML. They are frequently
 used for configuration files, another scenario where batch error reporting would significantly improve
