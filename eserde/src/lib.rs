@@ -220,6 +220,8 @@
 //! The key difference: validation would be performed _as part of_ the deserialization process. No need to
 //! remember to call `.validate()` afterwards.
 #![deny(missing_docs)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub mod json;
