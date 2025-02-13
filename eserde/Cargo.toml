@@ -20,7 +20,7 @@ features = ["derive", "json"]
 
 [dependencies]
 serde = { workspace = true }
-eserde_derive = { path = "../eserde_derive" }
+eserde_derive = { path = "../eserde_derive", version = "0.1" }
 serde_json = { workspace = true, optional = true }
 itoa = { workspace = true }
 
