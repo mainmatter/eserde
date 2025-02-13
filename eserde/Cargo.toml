@@ -1,0 +1,39 @@
+[package]
+name = "eserde"
+authors = ["Luca Palmieri <rust@lpalmieri.com>"]
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["serde", "serialization", "deserialization"]
+categories = ["encoding"]
+description = "Like `serde`, but it doesn't stop at the first deserialization error"
+
+[features]
+default = ["derive"]
+derive = ["serde/derive"]
+json = ["dep:serde_json"]
+
+[package.metadata.docs.rs]
+features = ["derive", "json"]
+
+[dependencies]
+serde = { workspace = true }
+eserde_derive = { path = "../eserde_derive" }
+serde_json = { workspace = true, optional = true }
+itoa = { workspace = true }
+
+# This cfg cannot be enabled, but it still forces Cargo to keep eserde_derive's
+# version in lockstep with eserde's, even if someone depends on the two crates
+# separately with eserde's "derive" feature disabled. Every eserde_derive release
+# is compatible with exactly one eserde release because the generated code
+# involves nonpublic APIs which are not bound by semver.
+[target.'cfg(any())'.dependencies]
+eserde_derive = { version = "=0.1.0", path = "../eserde_derive" }
+
+[dev-dependencies]
+eserde = { path = ".", features = ["json"] }
+insta = { workspace = true }
+itertools = { workspace = true }
+serde_path_to_error = { workspace = true }

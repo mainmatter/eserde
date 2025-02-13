@@ -1,0 +1,21 @@
+[workspace]
+members = ["eserde_derive", "eserde"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+repository = "https://github.com/mainmatter/eserde"
+license = "Apache-2.0 OR MIT"
+version = "0.1.0"
+
+[workspace.dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = "2"
+serde = "1"
+indexmap = "2"
+serde_json = "1"
+insta = "1.42.1"
+itertools = "0.14"
+itoa = "1.0"
+serde_path_to_error = "0.1"

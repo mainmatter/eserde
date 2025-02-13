@@ -1,0 +1,20 @@
+[package]
+name = "eserde_derive"
+authors = ["Luca Palmieri <rust@lpalmieri.com>"]
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = false
+keywords = ["serde", "serialization", "deserialization"]
+categories = ["encoding"]
+description = "A derive macro for the eserde crate"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { workspace = true, features = ["extra-traits"] }
+quote = { workspace = true }
+proc-macro2 = { workspace = true }
+indexmap = { workspace = true }

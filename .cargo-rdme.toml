@@ -1,0 +1,4 @@
+workspace-project = "eserde"
+
+[intralinks]
+strip-links = true
