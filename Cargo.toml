@@ -1,5 +1,5 @@
 [workspace]
-members = ["eserde_derive", "eserde"]
+members = ["eserde_derive", "eserde", "eserde_axum"]
 resolver = "2"
 
 [workspace.package]
@@ -19,3 +19,11 @@ insta = "1.42.1"
 itertools = "0.14"
 itoa = "1.0"
 serde_path_to_error = "0.1"
+axum-core = "0.5"
+eserde_derive = "0.1"
+http = "1"
+bytes = "1"
+tracing = "0.1"
+mime = { version = "0.3.17" }
+axum = "0.8"
+uuid = "1"

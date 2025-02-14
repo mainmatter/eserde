@@ -1,0 +1,28 @@
+[package]
+name = "eserde_axum"
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+version.workspace = true
+readme = false
+keywords = ["serde", "serialization", "deserialization", "http", "web"]
+categories = ["encoding"]
+description = "`axum` extractors built on `eserde` to improve error responses"
+
+[features]
+default = ["json"]
+json = ["eserde/json", "dep:mime"]
+
+[dependencies]
+axum-core = { workspace = true }
+bytes = { workspace = true }
+eserde = { path = "../eserde", version = "0.1" }
+http = { workspace = true }
+mime = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+axum = { workspace = true }
+uuid = { workspace = true, features = ["serde"] }
