@@ -153,6 +153,10 @@
 //! `eserde::json` doesn't support deserializing from a reader, i.e. there is no equivalent to
 //! `serde_json::from_reader`.
 //!
+//! There is also an `axum` integration, [`eserde_axum`](https://docs.rs/eserde_axum).
+//! It provides an `eserde`-powered JSON extractor as a drop-in replacement for `axum`'s built-in
+//! one.
+//!
 //! ### Other formats
 //!
 //! The approach used by `eserde` is compatible, in principle, with all existing `serde`-based
@@ -188,6 +192,68 @@
 //! ```
 //!
 //! Check out the [documentation of `eserde`'s derive macro for more details](crate::Deserialize).
+//!
+//! ## Under the hood
+//!
+//! But how does `eserde` actually work? Let's keep using JSON as an example—the same applies to other data formats.\
+//! We try to deserialize the input via `serde_json`. If deserialization succeeds, we return the deserialized value to the caller.
+//!
+//! ```rust,ignore
+//! // The source code for  `eserde::json::from_str`.
+//! pub fn from_str<'a, T>(s: &'a str) -> Result<T, DeserializationErrors>
+//! where
+//!     T: EDeserialize<'a>,
+//! {
+//!     let mut de = serde_json::Deserializer::from_str(s);
+//!     let error = match T::deserialize(&mut de) {
+//!         Ok(v) => {
+//!             return Ok(v);
+//!         }
+//!         Err(e) => e,
+//!     };
+//!     // [...]
+//! }
+//! ```
+//!
+//! Nothing new on the happy path—it's the very same thing you're doing today in your own applications with vanilla `serde`.
+//! We diverge on the unhappy path.\
+//! Instead of returning to the caller the error reported by `serde_json`, we do another pass over the input using
+//! [`eserde::EDeserialize::deserialize_for_errors`](crate::EDeserialize):
+//!
+//! ```rust,ignore
+//! pub fn from_str<'a, T>(s: &'a str) -> Result<T, DeserializationErrors>
+//! where
+//!     T: EDeserialize<'a>,
+//! {
+//!     // [...] The code above [...]
+//!     let _guard = ErrorReporter::start_deserialization();
+//!
+//!     let mut de = serde_json::Deserializer::from_str(s);
+//!     let de = path::Deserializer::new(&mut de);
+//!
+//!     let errors = match T::deserialize_for_errors(de) {
+//!         Ok(_) => vec![],
+//!         Err(_) => ErrorReporter::take_errors(),
+//!     };
+//!     let errors = if errors.is_empty() {
+//!         vec![DeserializationError {
+//!             path: None,
+//!             details: error.to_string(),
+//!         }]
+//!     } else {
+//!         errors
+//!     };
+//!
+//!     Err(DeserializationErrors::from(errors))
+//! }
+//! ```
+//!
+//! [`EDeserialize::deserialize_for_errors`](crate::EDeserialize) accumulates deserialization errors in a thread-local buffer,
+//! initialized by [`ErrorReporter::start_deserialization`](crate::ErrorReporter::start_deserialization) and retrieved later on
+//! by [`ErrorReporter::take_errors`](crate::ErrorReporter::take_errors).
+//!
+//! This underlying complexity is encapsulated into `eserde::json`'s functions, but it's beneficial to have a mental model of
+//! what's happening under the hood if you're planning to adopt `eserde`.
 //!
 //! ## Limitations and downsides
 //!
