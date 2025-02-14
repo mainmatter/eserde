@@ -73,3 +73,12 @@ changelog_path = "CHANGELOG.md"
 git_tag_name = "{{ version }}"
 git_tag_enable = true
 git_release_enable = true
+
+[[package]]
+name = "eserde_axum"
+changelog_update = true
+changelog_include = ["eserde_derive"]
+changelog_path = "eserde_axum/CHANGELOG.md"
+git_tag_name = "eserde_axum-{{ version }}"
+git_tag_enable = true
+git_release_enable = true
