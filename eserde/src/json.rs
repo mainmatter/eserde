@@ -107,7 +107,7 @@ where
     let errors = if errors.is_empty() {
         vec![DeserializationError {
             path: None,
-            details: error.to_string().into(),
+            details: error.to_string(),
         }]
     } else {
         errors
@@ -162,7 +162,7 @@ where
     let errors = if errors.is_empty() {
         vec![DeserializationError {
             path: None,
-            details: error.to_string().into(),
+            details: error.to_string(),
         }]
     } else {
         errors
