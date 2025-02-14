@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/mainmatter/eserde/compare/eserde_axum-0.1.0...eserde_axum-0.1.1) - 2025-02-14
+
+
+### 📚 Documentation
+- Enable unstable rustdoc feature to provide feature-flag information docs.rs (by @LukeMathWalker) - #14
+
+
+### Contributors
+
+* @LukeMathWalker
+
 ## [0.1.0](https://github.com/mainmatter/eserde/releases/tag/eserde_axum-0.1.0) - 2025-02-14
 
 
