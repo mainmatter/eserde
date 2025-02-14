@@ -26,6 +26,7 @@ macro_rules! __log_rejection {
 }
 
 #[derive(Debug)]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 /// Rejection type for [`Json`](super::Json).
 ///
 /// This rejection is used if the request body couldn't be deserialized
@@ -84,6 +85,7 @@ impl std::error::Error for JsonError {
 
 #[derive(Debug)]
 #[non_exhaustive]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 /// Rejection type for [`Json`](super::Json) used if the `Content-Type`
 /// header is missing.
 pub struct MissingJsonContentType;
@@ -121,6 +123,7 @@ impl Default for MissingJsonContentType {
 
 #[derive(Debug)]
 #[non_exhaustive]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 /// Rejection type for [`Json`](super::Json) used if the `Content-Type`
 /// header has an incorrect value.
 pub struct JsonContentTypeMismatch {
@@ -170,6 +173,7 @@ impl std::error::Error for JsonContentTypeMismatch {}
 /// as outlined in [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457.html).
 #[derive(Debug)]
 #[non_exhaustive]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub enum JsonRejection {
     #[allow(missing_docs)]
     JsonError(JsonError),
