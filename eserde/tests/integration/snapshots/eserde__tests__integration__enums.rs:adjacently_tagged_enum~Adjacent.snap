@@ -1,0 +1,10 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Ok(
+    Tuple(
+        -427070648,
+        true,
+    ),
+)

@@ -1,0 +1,84 @@
+[package]
+name = "eserde-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+arbitrary = { workspace = true, features = ["derive"] }
+libfuzzer-sys = { workspace = true }
+eserde = { workspace = true, features = ["json"] }
+eserde_test_helper = { workspace = true }
+insta = { workspace = true }
+itertools = { workspace = true }
+serde_path_to_error = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+
+
+[[bin]]
+name = "contract"
+path = "fuzz_targets/contract.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "contract_json"
+path = "fuzz_targets/contract_json.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "enum_repr"
+path = "fuzz_targets/enum_repr.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "enums"
+path = "fuzz_targets/enums.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "enums_deny_unknown_fields"
+path = "fuzz_targets/enums_deny_unknown_fields.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "enums_flattened"
+path = "fuzz_targets/enums_flattened.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "extra"
+path = "fuzz_targets/extra.rs"
+test = false
+doc = false
+bench = false
+
+
+[[bin]]
+name = "flatten"
+path = "fuzz_targets/flatten.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "structs"
+path = "fuzz_targets/structs.rs"
+test = false
+doc = false
+bench = false

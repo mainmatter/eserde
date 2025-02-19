@@ -1,0 +1,10 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Ok(
+    NormalStruct {
+        foo: "fvsTNa45C",
+        bar: false,
+    },
+)

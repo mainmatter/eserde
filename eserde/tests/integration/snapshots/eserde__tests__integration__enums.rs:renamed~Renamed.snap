@@ -1,0 +1,9 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Ok(
+    StructVariant {
+        field: "8AtP50nUcNy1f",
+    },
+)

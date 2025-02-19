@@ -1,5 +1,5 @@
 [workspace]
-members = ["eserde_derive", "eserde", "eserde_axum"]
+members = ["eserde_derive", "eserde", "eserde_axum", "fuzz", "test_helper"]
 resolver = "2"
 
 [workspace.package]
@@ -9,6 +9,7 @@ license = "Apache-2.0 OR MIT"
 version = "0.1.2"
 
 [workspace.dependencies]
+arbitrary = "1.4.1"
 proc-macro2 = "1"
 quote = "1"
 syn = "2"
@@ -20,10 +21,12 @@ itertools = "0.14"
 itoa = "1.0"
 serde_path_to_error = "0.1"
 axum-core = "0.5"
-eserde_derive = "0.1"
+eserde = { path = "eserde" }
+eserde_test_helper = { path = "test_helper" }
 http = "1"
 bytes = "1"
 tracing = "0.1"
 mime = { version = "0.3.17" }
 axum = "0.8"
 uuid = "1"
+libfuzzer-sys = "0.4"
