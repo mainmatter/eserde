@@ -1,0 +1,18 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Err(
+    DeserializationErrors(
+        [
+            DeserializationError {
+                path: Some(
+                    Path {
+                        segments: [],
+                    },
+                ),
+                details: "missing field `write_only`",
+            },
+        ],
+    ),
+)

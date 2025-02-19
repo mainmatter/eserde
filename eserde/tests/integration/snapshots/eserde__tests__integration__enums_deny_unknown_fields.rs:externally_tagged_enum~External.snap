@@ -1,0 +1,10 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Ok(
+    Struct {
+        foo: 1899123746,
+        bar: true,
+    },
+)

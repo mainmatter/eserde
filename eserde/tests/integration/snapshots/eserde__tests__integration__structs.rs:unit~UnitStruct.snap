@@ -1,0 +1,7 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Ok(
+    UnitStruct,
+)

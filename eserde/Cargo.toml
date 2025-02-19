@@ -33,7 +33,8 @@ itoa = { workspace = true }
 eserde_derive = { version = "=0.1.2", path = "../eserde_derive" }
 
 [dev-dependencies]
-eserde = { path = ".", features = ["json"] }
+eserde = { workspace = true, features = ["json"] }
+eserde_test_helper = { workspace = true }
 insta = { workspace = true }
 itertools = { workspace = true }
 serde_path_to_error = { workspace = true }

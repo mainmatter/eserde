@@ -1,0 +1,24 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Ok(
+    ContainerDenyUnknownFields {
+        f: 0.08785212,
+        e1: B(
+            true,
+        ),
+        e2: F(
+            0.7315602166463281,
+        ),
+        e3: B2(
+            false,
+        ),
+        e4: F2(
+            0.23258504150550563,
+        ),
+        e5: S3(
+            "Du2oQgdu1esrTH6hNSU",
+        ),
+    },
+)

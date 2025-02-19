@@ -1,0 +1,12 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Ok(
+    TupleStruct(
+        "XVUgTUKTJ7J8r",
+        false,
+        "yZwcp1Ge",
+        "nf9hN3",
+    ),
+)

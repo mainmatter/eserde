@@ -1,0 +1,14 @@
+---
+source: test_helper/src/test_helper.rs
+expression: result
+---
+Ok(
+    UntaggedWrapper(
+        StructNewType(
+            Struct {
+                foo: -521833035,
+                bar: true,
+            },
+        ),
+    ),
+)
