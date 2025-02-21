@@ -1,11 +1,11 @@
 use eserde_test_helper::assert_from_json_inline;
 use eserde_test_helper::enums_flattened::*;
-use eserde_test_helper::test;
+use eserde_test_helper::test_helper::TestHelper;
 
 #[test]
 fn enums_flattened() {
-    let test = test!(serialized; Container,
-        r#"{"f":0.6193613,"S":"iq4m5jByT","U":2413626873,"S2":"5B6FXFBEm","U2":2852593204,"S3":"HzE1mKd6Gv6L6DX"}"#
+    let test = TestHelper::<Container>::new_serialized(
+        r#"{"f":0.6193613,"S":"iq4m5jByT","U":2413626873,"S2":"5B6FXFBEm","U2":2852593204,"S3":"HzE1mKd6Gv6L6DX"}"#,
     );
     assert_from_json_inline!(test, @r#"
     Ok(
@@ -33,8 +33,8 @@ fn enums_flattened() {
 
 #[test]
 fn enums_flattened_deny_unknown_fields() {
-    let test = test!(serialized; ContainerDenyUnknownFields,
-        r#"{"f":0.6193613,"S":"iq4m5jByT","U":2413626873,"S2":"5B6FXFBEm","U2":2852593204,"S3":"HzE1mKd6Gv6L6DX"}"#
+    let test = TestHelper::<ContainerDenyUnknownFields>::new_serialized(
+        r#"{"f":0.6193613,"S":"iq4m5jByT","U":2413626873,"S2":"5B6FXFBEm","U2":2852593204,"S3":"HzE1mKd6Gv6L6DX"}"#,
     );
     assert_from_json_inline!(test, @r#"
     Ok(

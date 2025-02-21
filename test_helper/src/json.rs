@@ -1,7 +1,6 @@
 use arbitrary::Arbitrary;
 use fake::{Fake, Faker};
 
-
 /// Wrapper around [`serde_json::Value`] that implements the traits needed
 /// for use in tests and fuzz targets.
 #[derive(crate::prelude::Deserialize, crate::prelude::Serialize, std::fmt::Debug, fake::Dummy)]
