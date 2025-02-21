@@ -23,6 +23,19 @@ jobs:
       - name: Run tests
         run: cargo test
 
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@cargo-fuzz
+      - name: Fuzz all targets for 10 seconds
+        run: for target in $(cargo fuzz list); do echo "=== Fuzzing target $target"; cargo +nightly fuzz run --release $target -- -max_total_time=10s; echo "=== Done fuzzing target $target"; done
+
   fmt:
     name: Format
     runs-on: ubuntu-latest
@@ -59,7 +72,7 @@ jobs:
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
       - name: Generate report
-        run: cargo llvm-cov report --html --output-dir coverage
+        run: cargo llvm-cov report --html --output-dir coverage --ignore-filename-regex test_helper
       - uses: actions/upload-artifact@v4
         with:
           name: "Coverage report"
