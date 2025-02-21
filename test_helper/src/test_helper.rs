@@ -10,15 +10,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::json::JsonValue;
-
-pub struct TestHelper<T> {
-    name: String,
-    test_dir: PathBuf,
-    value_serialized: String,
-    _marker: PhantomData<T>,
-}
-
 /// Configure [`insta`] such that it writes its snapshots to the right directory,
 /// and doesn't prepend the module path to the snapshot file name.
 #[macro_export]
@@ -33,11 +24,16 @@ macro_rules! with_insta_config {
 #[macro_export]
 macro_rules! assert_from_json_inline {
     ($helper:expr, @$expected:expr) => {
-        $crate::with_insta_config!($helper, {
-            let result = $helper.from_json();
-            insta::assert_debug_snapshot!(result, $helper.name().clone(), @$expected);
-        })
+        let result = $helper.from_json();
+        insta::assert_debug_snapshot!(result, $helper.name().clone(), @$expected);
     };
+}
+
+pub struct TestHelper<T> {
+    name: String,
+    test_dir: PathBuf,
+    value_serialized: String,
+    _marker: PhantomData<T>,
 }
 
 impl<'de, T> TestHelper<T>
@@ -56,23 +52,6 @@ where
     {
         let serialized = Self::read_or_create_persisted(&name, &test_dir, || {
             serde_json::to_string(&Faker.fake::<T>()).unwrap()
-        });
-
-        Self::new_serialized(name, test_dir, serialized)
-    }
-
-    /// Create a new test helper, that holds a fake [`JsonValue`] serialized to
-    /// JSON for use in assertions.
-    /// This will write the serialized value to a cache file, so that test outputs
-    /// become stable.
-    /// Use [`crate::test`] to invoke this function to have it generate a unique,
-    /// stable name and figure out the directory the test lives in.
-    pub fn new_random_persisted(name: String, test_dir: PathBuf) -> Self
-    where
-        T: Dummy<Faker> + Serialize,
-    {
-        let serialized = Self::read_or_create_persisted(&name, &test_dir, || {
-            serde_json::to_string(&JsonValue::fake()).unwrap()
         });
 
         Self::new_serialized(name, test_dir, serialized)
@@ -106,17 +85,19 @@ where
         });
         self
     }
-    
+
     /// Try to deserialize the held data using [`eserde::json::from_str`],
     /// returning the result.
     pub fn from_json(&'de self) -> Result<T, eserde::DeserializationErrors> {
         eserde::json::from_str(&self.value_serialized)
     }
-    
+
+    /// Get the test's name.
     pub fn name(&self) -> &str {
         &self.name
     }
-    
+
+    /// Get the test's directory.
     pub fn test_dir(&self) -> &Path {
         &self.test_dir
     }
