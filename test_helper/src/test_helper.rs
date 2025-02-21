@@ -21,11 +21,22 @@ pub struct TestHelper<T> {
 
 /// Configure [`insta`] such that it writes its snapshots to the right directory,
 /// and doesn't prepend the module path to the snapshot file name.
+#[macro_export]
 macro_rules! with_insta_config {
     ($self:expr, $body:tt) => {
-        insta::with_settings!({ snapshot_path => $self.test_dir.join("snapshots"), prepend_module_to_snapshot => false }, {
+        insta::with_settings!({ snapshot_path => $self.test_dir().join("snapshots"), prepend_module_to_snapshot => false }, {
             $body
         });
+    };
+}
+
+#[macro_export]
+macro_rules! assert_from_json_inline {
+    ($helper:expr, @$expected:expr) => {
+        $crate::with_insta_config!($helper, {
+            let result = $helper.from_json();
+            insta::assert_debug_snapshot!(result, $helper.name().clone(), @$expected);
+        })
     };
 }
 
@@ -91,15 +102,23 @@ where
     {
         with_insta_config!(&self, {
             let result = self.from_json();
-            insta::assert_debug_snapshot!(self.name.clone(), result);
+            insta::assert_debug_snapshot!(self.name(), result);
         });
         self
     }
-
+    
     /// Try to deserialize the held data using [`eserde::json::from_str`],
     /// returning the result.
     pub fn from_json(&'de self) -> Result<T, eserde::DeserializationErrors> {
         eserde::json::from_str(&self.value_serialized)
+    }
+    
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    
+    pub fn test_dir(&self) -> &Path {
+        &self.test_dir
     }
 
     /// Determine the path of the file the serialized value gets persisted,
