@@ -61,7 +61,6 @@ pub enum Untagged {
 #[derive(Deserialize, Serialize, Dummy, Debug, Arbitrary)]
 pub struct UntaggedWrapper(#[eserde(compat)] Untagged);
 
-
 #[derive(Deserialize, Serialize, Dummy, Debug, Arbitrary)]
 #[serde(rename_all_fields = "UPPERCASE", rename_all = "snake_case")]
 pub enum Renamed {

@@ -1,12 +1,10 @@
 use eserde_test_helper::assert_from_json_inline;
 use eserde_test_helper::structs::*;
-use eserde_test_helper::test;
+use eserde_test_helper::test_helper::TestHelper;
 
 #[test]
 fn unit() {
-    let test = test!(serialized; UnitStruct,
-        r#"null"#
-    );
+    let test = TestHelper::<UnitStruct>::new_serialized(r#"null"#);
     assert_from_json_inline!(test, @r"
     Ok(
         UnitStruct,
@@ -16,9 +14,7 @@ fn unit() {
 
 #[test]
 fn normal() {
-    let test = test!(serialized; NormalStruct,
-        r#"{"foo":"fvsTNa45C","bar":false}"#
-    );
+    let test = TestHelper::<NormalStruct>::new_serialized(r#"{"foo":"fvsTNa45C","bar":false}"#);
     assert_from_json_inline!(test, @r#"
     Ok(
         NormalStruct {
@@ -31,9 +27,7 @@ fn normal() {
 
 #[test]
 fn newtype() {
-    let test = test!(serialized; NewType,
-        r#""F71VZOS""#
-    );
+    let test = TestHelper::<NewType>::new_serialized(r#""F71VZOS""#);
     assert_from_json_inline!(test, @r#"
     Ok(
         NewType(
@@ -45,9 +39,7 @@ fn newtype() {
 
 #[test]
 fn tuple() {
-    let test = test!(serialized; TupleStruct,
-        r#"["FPoREowVSC0CjkC",false]"#
-    );
+    let test = TestHelper::<TupleStruct>::new_serialized(r#"["FPoREowVSC0CjkC",false]"#);
     assert_from_json_inline!(test, @r#"
     Ok(
         TupleStruct(
@@ -60,8 +52,8 @@ fn tuple() {
 
 #[test]
 fn renamed_fields() {
-    let test = test!(serialized; RenamedFields,
-        r#"{"camelCase":-1608793701,"new_name":-663097910}"#
+    let test = TestHelper::<RenamedFields>::new_serialized(
+        r#"{"camelCase":-1608793701,"new_name":-663097910}"#,
     );
     assert_from_json_inline!(test, @r"
     Ok(
@@ -75,8 +67,8 @@ fn renamed_fields() {
 
 #[test]
 fn deny_unknown_fields() {
-    let test = test!(serialized; DenyUnknownFields,
-        r#"{"foo":"3nrBBXVgrpwpQ9tDK8","bar":false}"#
+    let test = TestHelper::<DenyUnknownFields>::new_serialized(
+        r#"{"foo":"3nrBBXVgrpwpQ9tDK8","bar":false}"#,
     );
     assert_from_json_inline!(test, @r#"
     Ok(
