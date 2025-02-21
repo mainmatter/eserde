@@ -32,7 +32,7 @@ jobs:
         with:
           toolchain: nightly
       - name: Install cargo-fuzz
-        uses: taiki-e/install-action@cargo-fuzz
+        run: cargo install --locked cargo-fuzz 
       - name: Fuzz all targets for 10 seconds
         run: for target in $(cargo fuzz list); do echo "=== Fuzzing target $target"; cargo +nightly fuzz run --release $target -- -max_total_time=10s; echo "=== Done fuzzing target $target"; done
 
