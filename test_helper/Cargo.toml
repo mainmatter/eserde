@@ -12,5 +12,5 @@ fake = { version = "4", features = ["derive", "chrono", "serde_json"] }
 insta = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_repr = {version = "0.1.19", default-features = false }
+serde_repr = { version = "0.1.19", default-features = false }
 rand = { version = "0.9", default-features = false }
