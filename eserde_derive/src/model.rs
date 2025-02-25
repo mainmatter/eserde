@@ -2,8 +2,7 @@ use std::collections::HashSet;
 
 use crate::filter_attributes::FilterAttributes;
 use indexmap::IndexSet;
-use quote::quote;
-use syn::DeriveInput;
+use syn::{spanned::Spanned, DeriveInput};
 
 /// A type with exactly the same set of fields/variants as the original type, but with a different name.
 /// This type is used to derive `Deserialize`, thus obtaining from `serde` the same deserialize implementation
@@ -31,19 +30,24 @@ impl ShadowType {
 /// `T` is the original field type.
 /// This type should never fail to deserialize, thus allowing us to collect all errors in one go.
 pub struct PermissiveCompanionType {
+    /// The companion type.
     pub ty_: DeriveInput,
     /// Generic type parameters that must be constrained with `::eserde::EDeserialize` instead of `::serde::Deserialize`.
     pub eserde_aware_generics: IndexSet<syn::Ident>,
+    /// An impl block; contains methods for `#[serde(deserialize_with)]` attributes.
+    pub impl_: Option<syn::ItemImpl>,
 }
 
 impl PermissiveCompanionType {
     pub fn new(ident: syn::Ident, input: &syn::DeriveInput) -> Self {
         fn modify_field_types(
+            ident: &syn::Ident,
             fields: &mut syn::Fields,
             eserde_aware_generics: &mut IndexSet<syn::Ident>,
+            deserialize_withs: &mut Vec<syn::ImplItemFn>,
             generic_params: &HashSet<syn::Ident>,
         ) {
-            for field in fields.iter_mut() {
+            for (i, field) in fields.iter_mut().enumerate() {
                 // Process all `eserde` attributes, then remove them since
                 // they are not valid `serde` attributes.
                 let is_eserde_compatible = !has_eserde_path_attr(&field.attrs, "compat");
@@ -85,29 +89,83 @@ impl PermissiveCompanionType {
                     field.attrs.push(syn::parse_quote!(#[serde(default)]));
                 }
 
-                field.ty = {
+                // Wrap the field type in `MaybeInvalidOrMissing<T>` or `MaybeInvalid<T>`.
+                let wrapper_type = {
                     let ty_ = &field.ty;
-                    let tokens = if !has_default {
-                        if is_eserde_compatible {
-                            field.attrs.push(
-                                syn::parse_quote!(#[serde(deserialize_with = "::eserde::_macro_impl::maybe_invalid_or_missing")]),
-                            );
-                        }
-                        quote! {
-                            ::eserde::_macro_impl::MaybeInvalidOrMissing<#ty_>
+                    if has_default {
+                        syn::parse_quote! {
+                            ::eserde::_macro_impl::MaybeInvalid::<#ty_>
                         }
                     } else {
-                        if is_eserde_compatible {
-                            field.attrs.push(
-                                syn::parse_quote!(#[serde(deserialize_with = "::eserde::_macro_impl::maybe_invalid")]),
-                            );
+                        syn::parse_quote! {
+                            ::eserde::_macro_impl::MaybeInvalidOrMissing::<#ty_>
                         }
-                        quote! {
-                            ::eserde::_macro_impl::MaybeInvalid<#ty_>
-                        }
-                    };
-                    syn::parse2(tokens).unwrap()
+                    }
                 };
+
+                // Handle custom `#[serde(deserialize_with)]` attributes.
+                // Get the value of `#[serde(deserialize_with)]` if present.
+                let deserialize_with_fn_name = {
+                    let mut path: Option<syn::ExprPath> = None;
+                    // TODO: properly handle removing the old deserialize_with.
+                    for idx in 0..field.attrs.len() {
+                        let attr = &field.attrs[idx];
+                        if attr.path().is_ident("serde") {
+                            let mut found = false;
+                            let _ = attr.parse_nested_meta(|meta| {
+                                if meta.path.is_ident("deserialize_with") {
+                                    found = true;
+                                    let lit_str: syn::LitStr = meta.value()?.parse()?;
+                                    path = syn::parse_str(lit_str.value().as_str()).ok();
+                                }
+                                Ok(())
+                            });
+                            if found {
+                                field.attrs.remove(idx);
+                                break;
+                            }
+                        }
+                    }
+                    path.map(| path| {
+                        let fn_name = format!("__eserde_deserialize_{}", field.ident.as_ref().map(|ident| ident.to_string()).unwrap_or_else(|| i.to_string()));
+                        let fn_ident = syn::Ident::new(&fn_name, field.span());
+                        // Add the method to `deserialize_withs`.
+                        deserialize_withs.push(syn::parse_quote! {
+                            fn #fn_ident<'de, D>(deserializer: D) -> ::core::result::Result<#wrapper_type, D::Error>
+                            where
+                                D: ::eserde::_serde::Deserializer<'de>,
+                            {
+                                let v = match #path(deserializer) {
+                                    Ok(_) => #wrapper_type::Valid(::core::marker::PhantomData),
+                                    Err(e) => {
+                                        ::eserde::reporter::ErrorReporter::report(e);
+                                        #wrapper_type::Invalid
+                                    }
+                                };
+                                Ok(v)
+                            }
+                        });
+                        fn_name
+                    })
+                };
+
+                // Set the `#[serde(deserialize_with)]` attribute.
+                if let Some(fn_name) = deserialize_with_fn_name {
+                    let path_string = format!("{}::{}", ident, fn_name);
+                    let path_lit = syn::Lit::Str(syn::LitStr::new(&path_string, field.span()));
+                    field
+                        .attrs
+                        .push(syn::parse_quote!(#[serde(deserialize_with = #path_lit)]));
+                } else if is_eserde_compatible {
+                    if has_default {
+                        field.attrs.push(syn::parse_quote!(#[serde(deserialize_with = "::eserde::_macro_impl::maybe_invalid")]));
+                    } else {
+                        field.attrs.push(syn::parse_quote!(#[serde(deserialize_with = "::eserde::_macro_impl::maybe_invalid_or_missing")]));
+                    }
+                }
+
+                // Set the field to the wrapper type.
+                field.ty = wrapper_type;
             }
         }
 
@@ -129,19 +187,24 @@ impl PermissiveCompanionType {
             .map(|param| param.ident.clone())
             .collect();
         let mut eserde_aware_generics = IndexSet::new();
+        let mut deserialize_withs = Vec::new();
         match &mut companion.data {
             syn::Data::Struct(data_struct) => {
                 modify_field_types(
+                    &companion.ident,
                     &mut data_struct.fields,
                     &mut eserde_aware_generics,
+                    &mut deserialize_withs,
                     &generic_params,
                 );
             }
             syn::Data::Enum(data_enum) => {
                 data_enum.variants.iter_mut().for_each(|variant| {
                     modify_field_types(
+                        &companion.ident,
                         &mut variant.fields,
                         &mut eserde_aware_generics,
+                        &mut deserialize_withs,
                         &generic_params,
                     )
                 });
@@ -174,9 +237,22 @@ impl PermissiveCompanionType {
                 .push(syn::parse_quote!(#[serde(bound(deserialize = #bound))]));
         }
 
+        let impl_ = if deserialize_withs.is_empty() {
+            None
+        } else {
+            let name = &companion.ident;
+            let (impl_generics, ty_generics, where_clause) = companion.generics.split_for_impl();
+            Some(syn::parse_quote! {
+                impl #impl_generics #name #ty_generics #where_clause {
+                    #(#deserialize_withs)*
+                }
+            })
+        };
+
         Self {
             ty_: companion,
             eserde_aware_generics,
+            impl_,
         }
     }
 }
