@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use itertools::Itertools;
-use std::borrow::Cow;
+use std::{borrow::Cow, num::TryFromIntError};
 
 #[derive(eserde::Deserialize)]
 struct NamedStruct {
@@ -57,6 +57,19 @@ enum EnumWithBothNamedAndTupleVariants {
     Tuple(u32),
     TupleMultiple(u32, u64),
     Unit,
+}
+
+#[derive(eserde::Deserialize)]
+struct DeserializeWith {
+    #[serde(deserialize_with = "deserialize_u8")]
+    n: Result<u8, TryFromIntError>,
+}
+fn deserialize_u8<'de, D>(deserializer: D) -> Result<Result<u8, TryFromIntError>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let long = u64::deserialize(deserializer)?;
+    Ok(u8::try_from(long))
 }
 
 // #[test]

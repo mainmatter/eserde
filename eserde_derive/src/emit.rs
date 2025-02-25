@@ -19,11 +19,13 @@ impl ToTokens for ShadowType {
 
 impl ToTokens for PermissiveCompanionType {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let Self { ty_: input, .. } = self;
+        let Self { ty_, impl_, .. } = self;
         quote! {
             #[derive(::eserde::_serde::Deserialize)]
             #[serde(crate = "eserde::_serde")]
-            #input
+            #ty_
+
+            #impl_
         }
         .to_tokens(tokens);
     }
