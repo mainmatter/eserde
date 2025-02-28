@@ -1,0 +1,7 @@
+error: proc-macro derive panicked
+ --> tests/compile_fail/union.rs:1:10
+  |
+1 | #[derive(eserde::Deserialize)]
+  |          ^^^^^^^^^^^^^^^^^^^
+  |
+  = help: message: not implemented

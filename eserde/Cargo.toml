@@ -38,3 +38,4 @@ eserde_test_helper = { workspace = true }
 insta = { workspace = true }
 itertools = { workspace = true }
 serde_path_to_error = { workspace = true }
+trybuild = { workspace = true }
