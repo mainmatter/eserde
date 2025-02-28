@@ -30,11 +30,10 @@ pub fn reject_unsupported_inputs(input: &DeriveInput) -> Result<(), syn::Error> 
         }
     }
 
-    if let Some(first_error) = errors.pop() {
-        let error = errors.into_iter().fold(first_error, |mut acc, e| {
-            acc.combine(e);
-            acc
-        });
+    if let Some(error) = errors.into_iter().reduce(|mut a, b| {
+        a.combine(b);
+        a
+    }) {
         Err(error)
     } else {
         Ok(())
