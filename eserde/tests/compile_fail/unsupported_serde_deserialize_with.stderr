@@ -1,13 +1,13 @@
 error: `eserde::Deserialize` doesn't yet support the `#[serde(deserialize_with = "..")]` attribute on fields.
- --> tests/compile_fail/unsupported_serde_deserialize_with.rs:7:5
-  |
-7 | /     #[serde(alias = "1", deserialize_with = "u64_to_u8")]
-8 | |     y: Result<u8, TryFromIntError>,
-  | |__________________________________^
-
-error: `eserde::Deserialize` doesn't yet support the `#[serde(deserialize_with = "..")]` attribute on fields.
  --> tests/compile_fail/unsupported_serde_deserialize_with.rs:5:5
   |
 5 | /     #[serde(alias = "0", deserialize_with = "u64_to_u8")]
 6 | |     x: Result<u8, TryFromIntError>,
+  | |__________________________________^
+
+error: `eserde::Deserialize` doesn't yet support the `#[serde(deserialize_with = "..")]` attribute on fields.
+ --> tests/compile_fail/unsupported_serde_deserialize_with.rs:7:5
+  |
+7 | /     #[serde(alias = "1", deserialize_with = "u64_to_u8")]
+8 | |     y: Result<u8, TryFromIntError>,
   | |__________________________________^
