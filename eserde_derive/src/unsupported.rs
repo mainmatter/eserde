@@ -139,6 +139,7 @@ fn find_serde_path_attr<'a>(
         let mut matches = false;
         if attr.path().is_ident("serde") {
             let _ = attr.parse_nested_meta(|meta| {
+                let _value = meta.value().and_then(|s| s.parse::<syn::Expr>());
                 if meta.path.is_ident(ident) {
                     matches = true;
                 }
@@ -158,7 +159,8 @@ fn find_serde_path_attr_with_value<'a>(
         let mut matches = false;
         if attr.path().is_ident("serde") {
             let _ = attr.parse_nested_meta(|meta| {
-                if meta.path.is_ident(ident) && meta.value().is_ok() {
+                let value = meta.value().and_then(|s| s.parse::<syn::Expr>());
+                if meta.path.is_ident(ident) && value.is_ok() {
                     matches = true;
                 }
                 Ok(())

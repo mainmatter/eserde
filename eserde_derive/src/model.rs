@@ -186,6 +186,7 @@ fn has_serde_path_attr(attrs: &[syn::Attribute], path: &str) -> bool {
         let mut has_attr = false;
         if attr.path().is_ident("serde") {
             let _ = attr.parse_nested_meta(|meta| {
+                let _value = meta.value().and_then(|s| s.parse::<syn::Expr>());
                 if meta.path.is_ident(path) {
                     has_attr = true;
                 }
@@ -201,6 +202,7 @@ fn has_eserde_path_attr(attrs: &[syn::Attribute], path: &str) -> bool {
         let mut has_attr = false;
         if attr.path().is_ident("eserde") {
             let _ = attr.parse_nested_meta(|meta| {
+                let _value = meta.value().and_then(|s| s.parse::<syn::Expr>());
                 if meta.path.is_ident(path) {
                     has_attr = true;
                 }
