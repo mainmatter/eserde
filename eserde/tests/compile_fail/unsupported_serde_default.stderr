@@ -1,0 +1,13 @@
+error: `eserde::Deserialize` doesn't yet support the `#[serde(default = "..")]` attribute. It only supports `#[serde(default)]`, which defers to the `Default` trait to generate the default value.
+ --> tests/compile_fail/unsupported_serde_default.rs:5:5
+  |
+5 | /     #[serde(default = "default_route")]
+6 | |     route_1: String,
+  | |___________________^
+
+error: `eserde::Deserialize` doesn't yet support the `#[serde(default = "..")]` attribute. It only supports `#[serde(default)]`, which defers to the `Default` trait to generate the default value.
+ --> tests/compile_fail/unsupported_serde_default.rs:3:5
+  |
+3 | /     #[serde(rename = "route", default = "default_route")]
+4 | |     route_0: String,
+  | |___________________^
