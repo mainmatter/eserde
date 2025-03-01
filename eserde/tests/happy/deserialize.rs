@@ -12,7 +12,7 @@ struct NamedStruct {
 }
 
 #[derive(eserde::Deserialize)]
-struct GenericStruct<T, S> {
+struct GenericStruct<T: Default, S> {
     // #[eserde(compat)]
     a: T,
     #[eserde(compat)]
@@ -20,7 +20,7 @@ struct GenericStruct<T, S> {
 }
 
 #[derive(eserde::Deserialize)]
-struct LifetimeGenericStruct<'a, 'b, 'c, 'd, 'e> {
+struct LifetimeGenericStruct<'a, 'b, 'c, 'd, 'e: 'a> {
     #[serde(borrow)]
     a: Cow<'a, str>,
     // `&str` and `&[u8]` are special-cased by `serde`

@@ -47,16 +47,18 @@ impl<'a> ImplDeserGenerics<'a> {
             //
             // TODO: Take into account the `#[serde(bound)]` attribute https://serde.rs/container-attrs.html#bound
             for ty_param in input.generics.type_params() {
-                let predicate = if eserde_aware_generics.contains(&ty_param.ident) {
-                    syn::parse_quote! { #ty_param: ::eserde::EDeserialize<'de> }
+                let ident = &ty_param.ident;
+                let predicate = if eserde_aware_generics.contains(ident) {
+                    syn::parse_quote! { #ident: ::eserde::EDeserialize<'de> }
                 } else {
-                    syn::parse_quote! { #ty_param: ::eserde::_serde::Deserialize<'de> }
+                    syn::parse_quote! { #ident: ::eserde::_serde::Deserialize<'de> }
                 };
                 where_clause.predicates.push(predicate);
             }
 
             // Each lifetime parameter must be outlived by `'de`, the lifetime of the `Deserialize` trait.
-            for lifetime in input.generics.lifetimes() {
+            for lifetime_param in input.generics.lifetimes() {
+                let lifetime = &lifetime_param.lifetime;
                 where_clause
                     .predicates
                     .push(syn::parse_quote! { 'de: #lifetime });
