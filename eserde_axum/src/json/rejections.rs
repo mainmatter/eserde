@@ -183,6 +183,12 @@ pub enum JsonRejection {
     JsonContentTypeMismatch(JsonContentTypeMismatch),
     #[allow(missing_docs)]
     BytesRejection(BytesRejection),
+    #[cfg(feature = "validator")]
+    #[allow(missing_docs)]
+    ValidationErrors(validator::ValidationErrors),
+    #[cfg(feature = "serde_valid")]
+    #[allow(missing_docs)]
+    SerdeValidRejection(serde_valid::validation::Errors),
 }
 impl axum_core::response::IntoResponse for JsonRejection {
     fn into_response(self) -> axum_core::response::Response {
@@ -223,6 +229,28 @@ impl axum_core::response::IntoResponse for JsonRejection {
                 }
                 response.unwrap_or_else(|| INTERNAL_SERVER_ERROR.into_response())
             }
+            #[cfg(feature = "validator")]
+            Self::ValidationErrors(inner) => {
+                let errors = format!("{}", inner)
+                    .split("\n")
+                    .zip(inner.errors().iter())
+                    .map(|(message, (path, _))| ValidationError {
+                        detail: message.to_string().replace("\"", "'"),
+                        source: Source::Body {
+                            pointer: Some(path.to_string()),
+                        },
+                    })
+                    .collect::<Vec<_>>();
+
+                let response = InvalidRequest::new(ValidationErrors { errors });
+                __log_rejection!(
+                    rejection_type = ValidationErrors,
+                    status = InvalidRequest::status(),
+                );
+                response.into_response()
+            }
+            #[cfg(feature = "serde_valid")]
+            Self::SerdeValidRejection(inner) => serde_valid_error_to_a_response(inner),
         }
     }
 }
@@ -254,6 +282,10 @@ impl std::fmt::Display for JsonRejection {
             Self::MissingJsonContentType(inner) => write!(f, "{inner}"),
             Self::JsonContentTypeMismatch(inner) => write!(f, "{inner}"),
             Self::BytesRejection(inner) => write!(f, "{inner}"),
+            #[cfg(feature = "validator")]
+            Self::ValidationErrors(inner) => write!(f, "{inner}"),
+            #[cfg(feature = "serde_valid")]
+            Self::SerdeValidRejection(inner) => write!(f, "{inner}"),
         }
     }
 }
@@ -264,6 +296,79 @@ impl std::error::Error for JsonRejection {
             Self::MissingJsonContentType(inner) => inner.source(),
             Self::JsonContentTypeMismatch(inner) => inner.source(),
             Self::BytesRejection(inner) => inner.source(),
+            #[cfg(feature = "validator")]
+            Self::ValidationErrors(inner) => inner.source(),
+            #[cfg(feature = "serde_valid")]
+            Self::SerdeValidRejection(inner) => inner.source(),
+        }
+    }
+}
+
+#[cfg(feature = "serde_valid")]
+#[inline]
+fn serde_valid_error_to_a_response(
+    inner: serde_valid::validation::error::Errors,
+) -> axum_core::response::Response {
+    use axum_core::response::IntoResponse;
+    use serde_valid::validation::Errors;
+
+    match inner.clone() {
+        serde_valid::validation::Errors::Object(a) => {
+            let errors = a
+                .properties
+                .iter()
+                .map(|(key, value)| ValidationError {
+                    detail: match value {
+                        Errors::Array(array_errors) => format!("{}", array_errors),
+                        Errors::Object(object_errors) => format!("{}", object_errors),
+                        Errors::NewType(newtype) => newtype
+                            .iter()
+                            .map(|e| format!("{}", e))
+                            .collect::<Vec<_>>()
+                            .join("\n"),
+                    },
+                    source: Source::Body {
+                        pointer: Some(key.to_string()),
+                    },
+                })
+                .collect();
+            let response = InvalidRequest::new(ValidationErrors { errors });
+            __log_rejection!(
+                rejection_type = JsonError,
+                status = InvalidRequest::status(),
+            );
+            return response.into_response();
+        }
+        Errors::Array(array) => {
+            let errors = array
+                .errors
+                .iter()
+                .map(|e| ValidationError {
+                    detail: format!("{}", e),
+                    source: Source::Body { pointer: None },
+                })
+                .collect();
+            let response = InvalidRequest::new(ValidationErrors { errors });
+            __log_rejection!(
+                rejection_type = JsonError,
+                status = InvalidRequest::status(),
+            );
+            return response.into_response();
+        }
+        Errors::NewType(errors) => {
+            let errors = errors
+                .iter()
+                .map(|e| ValidationError {
+                    detail: format!("{}", e),
+                    source: Source::Body { pointer: None },
+                })
+                .collect();
+            let response = InvalidRequest::new(ValidationErrors { errors });
+            __log_rejection!(
+                rejection_type = JsonError,
+                status = InvalidRequest::status(),
+            );
+            return response.into_response();
         }
     }
 }

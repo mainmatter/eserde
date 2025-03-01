@@ -12,6 +12,8 @@ description = "`axum` extractors built on `eserde` to improve error responses"
 [features]
 default = ["json"]
 json = ["eserde/json", "dep:mime"]
+validator = ["dep:validator"]
+serde_valid = ["dep:serde_valid"]
 
 [dependencies]
 axum-core = { workspace = true }
@@ -21,7 +23,9 @@ http = { workspace = true }
 mime = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_valid = { version = "1.0.5", optional = true }
 tracing = { workspace = true }
+validator = { version = "0.20.0", optional = true }
 
 [dev-dependencies]
 axum = { workspace = true }

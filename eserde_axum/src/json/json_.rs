@@ -93,6 +93,7 @@ use serde::{de::DeserializeOwned, Serialize};
 #[must_use]
 pub struct Json<T>(pub T);
 
+#[cfg(all(not(feature = "validator"), not(feature = "serde_valid")))]
 impl<T, S> FromRequest<S> for Json<T>
 where
     T: DeserializeOwned,
@@ -105,6 +106,48 @@ where
         check_json_content_type(req.headers())?;
         let bytes = Bytes::from_request(req, state).await?;
         Self::from_bytes(&bytes)
+    }
+}
+
+#[cfg(feature = "validator")]
+impl<T, S> FromRequest<S> for Json<T>
+where
+    T: validator::Validate + DeserializeOwned,
+    T: for<'de> EDeserialize<'de>,
+    S: Send + Sync,
+{
+    type Rejection = JsonRejection;
+
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        check_json_content_type(req.headers())?;
+        let bytes = Bytes::from_request(req, state).await?;
+        let json = Self::from_bytes(&bytes)?;
+
+        json.0.validate().map_err(JsonRejection::ValidationErrors)?;
+
+        Ok(json)
+    }
+}
+
+#[cfg(feature = "serde_valid")]
+impl<T, S> FromRequest<S> for Json<T>
+where
+    T: serde_valid::Validate + DeserializeOwned,
+    T: for<'de> EDeserialize<'de>,
+    S: Send + Sync,
+{
+    type Rejection = JsonRejection;
+
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        check_json_content_type(req.headers())?;
+        let bytes = Bytes::from_request(req, state).await?;
+        let json = Self::from_bytes(&bytes)?;
+
+        json.0
+            .validate()
+            .map_err(JsonRejection::SerdeValidRejection)?;
+
+        Ok(json)
     }
 }
 
