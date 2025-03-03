@@ -10,7 +10,7 @@ pub struct NamedStruct {
 }
 
 #[derive(Debug, Serialize, Deserialize, Arbitrary)]
-pub struct GenericStruct<T: Default, S> {
+pub struct GenericStruct<T, S: std::any::Any> {
     // #[eserde(compat)]
     a: T,
     #[eserde(compat)]
