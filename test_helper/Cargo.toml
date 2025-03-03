@@ -4,6 +4,7 @@ edition.workspace = true
 repository.workspace = true
 license.workspace = true
 version.workspace = true
+publish = false
 
 [dependencies]
 arbitrary = { workspace = true, features = ["derive"] }
