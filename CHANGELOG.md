@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/mainmatter/eserde/compare/0.1.2...0.1.3) - 2025-03-03
+
+
+### 🐛 Bug Fixes
+- error message ordering (by @MingweiSamuel) - #25
+- ensure `parse_nested_meta` properly handles values, fix [#24](https://github.com/mainmatter/eserde/pull/24) (by @MingweiSamuel) - #25
+
+
+
+### 🧪 Testing
+- add basic trybuild tests (by @MingweiSamuel) - #25
+
+
+### Contributors
+
+* @MingweiSamuel
+* @hdoordt
+
 ## [0.1.2](https://github.com/mainmatter/eserde/compare/0.1.1...0.1.2) - 2025-02-14
 
 
