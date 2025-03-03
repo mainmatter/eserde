@@ -10,7 +10,7 @@ pub struct NamedStruct {
 }
 
 #[derive(Debug, Serialize, Deserialize, Arbitrary)]
-pub struct GenericStruct<T, S> {
+pub struct GenericStruct<T, S: std::any::Any> {
     // #[eserde(compat)]
     a: T,
     #[eserde(compat)]
@@ -18,7 +18,7 @@ pub struct GenericStruct<T, S> {
 }
 
 #[derive(Debug, Serialize, Deserialize, Arbitrary)]
-pub struct LifetimeGenericStruct<'a, 'b, 'c, 'd, 'e> {
+pub struct LifetimeGenericStruct<'a, 'b, 'c, 'd, 'e: 'a> {
     #[serde(borrow)]
     a: Cow<'a, str>,
     // `&str` and `&[u8]` are special-cased by `serde`
