@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/mainmatter/eserde/compare/0.1.3...0.1.4) - 2025-03-03
+
+
+### 🐛 Bug Fixes
+- handle generic params with bounds ([#28](https://github.com/mainmatter/eserde/pull/28)) (by @MingweiSamuel) - #28
+
+
+### Contributors
+
+* @MingweiSamuel
+
 ## [0.1.3](https://github.com/mainmatter/eserde/compare/0.1.2...0.1.3) - 2025-03-03
 
 
