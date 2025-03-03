@@ -106,17 +106,11 @@ impl PermissiveCompanionType {
                     }
                 }
 
-                // Check if `#[serde(default)]` is already present on the field.
-                // TODO: handle the `#[serde(default = "..")]` case.
-                //   We'll have to generate a function that wraps around the
-                //   one specified in the attribute.
-                let has_default = find_attr_meta(&field.attrs, "serde", "default").is_some();
-                // Add `#[serde(default)]` to the list:
-                if !has_default {
-                    field
-                        .attrs
-                        .push(syn::parse_quote_spanned!(span=> #[serde(default)]));
-                }
+                // Remove any `#[serde(default = "..")]` on the field, and re-add it without any custom value.
+                let has_default = remove_attr_meta(&mut field.attrs, "serde", "default").is_some();
+                field
+                    .attrs
+                    .push(syn::parse_quote_spanned!(span=> #[serde(default)]));
 
                 let field_ty = &field.ty;
                 let wrapper_ty = if has_default {

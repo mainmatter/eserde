@@ -1,9 +1,6 @@
 use syn::DeriveInput;
 
-use crate::{
-    attr::{find_attr_meta, find_attr_meta_with_value},
-    filter_attributes::FilterAttributes,
-};
+use crate::{attr::find_attr_meta, filter_attributes::FilterAttributes};
 
 /// Return a compiler error if the input contains data types or
 /// `serde` attributes that are not supported by our custom derive.
@@ -99,14 +96,6 @@ fn reject_field_attributes(errors: &mut Vec<syn::Error>, field: &syn::Field) {
                 ),
             ));
         }
-    }
-
-    if let Some(meta_item) = find_attr_meta_with_value(&field.attrs, "serde", "default") {
-        errors.push(syn::Error::new_spanned(
-            meta_item,
-            "`eserde::Deserialize` doesn't yet support the `#[serde(default = \"..\")]` attribute. \
-                It only supports `#[serde(default)]`, which defers to the `Default` trait to generate the default value.".to_string(),
-        ));
     }
 }
 

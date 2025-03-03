@@ -4,6 +4,12 @@ error: expected `,`
 3 |     #[serde(default - this parses but is not Meta Item Attribute Syntax, serde errors "expected `,`")]
   |                     ^
 
+error: duplicate serde attribute `default`
+ --> tests/compile_fail/meta_item_attribute_syntax_bad.rs:3:5
+  |
+3 |     #[serde(default - this parses but is not Meta Item Attribute Syntax, serde errors "expected `,`")]
+  |     ^
+
 error[E0277]: the trait bound `__ImplEDeserializeForFoo: Deserialize<'_>` is not satisfied
  --> tests/compile_fail/meta_item_attribute_syntax_bad.rs:2:8
   |

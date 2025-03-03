@@ -444,7 +444,6 @@ pub mod _macro_impl;
 /// - `#[serde(untagged)]`
 ///
 /// The following [field attributes](https://serde.rs/field-attrs.html) will be rejected at compile-time:
-/// - `#[serde(default = "...")]` if it doesn't rely on `Default::default` for the default logic
 /// - `#[serde(skip_deserializing)]`
 /// - `#[serde(with = "...")]`
 /// - `#[serde(bound = "...")]`

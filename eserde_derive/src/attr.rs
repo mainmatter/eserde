@@ -69,40 +69,6 @@ pub fn find_attr_meta(
     })
 }
 
-/// Returns if `#[ATTR_NAME(META_KEY = <something>)]` exists within any of the attributes.
-///
-/// ```rust
-/// # mod attr { include!("attr.rs"); } use attr::find_attr_meta_with_value; // hack for proc_macro doctests.
-/// # fn main() {
-/// use syn::parse_quote;
-///
-/// // `Some(..)`
-/// assert!(find_attr_meta_with_value(&[parse_quote!( #[serde(rename = "foo")] )], "serde", "rename").is_some());
-/// assert!(find_attr_meta_with_value(&[parse_quote!( #[serde(default, rename = "bar")] )], "serde", "rename").is_some());
-/// assert!(find_attr_meta_with_value(&[parse_quote!( #[serde(rename, rename = "baz", rename)] )], "serde", "rename").is_some());
-///
-/// // `None`
-/// assert!(find_attr_meta_with_value(&[parse_quote!( #[serde(rename)] )], "serde", "rename").is_none());
-/// assert!(find_attr_meta_with_value(&[parse_quote!( #[serde(default, rename)] )], "serde", "rename").is_none());
-/// assert!(find_attr_meta_with_value(&[parse_quote!( #[serde(rename, rename)] )], "serde", "rename").is_none());
-/// assert!(find_attr_meta_with_value(&[parse_quote!( #[ignore(rename = "bing")] )], "serde", "rename").is_none());
-/// assert!(find_attr_meta_with_value(&[parse_quote!( #[serde = "rename"] )], "serde", "rename").is_none());
-/// # }
-/// ```
-pub fn find_attr_meta_with_value(
-    attrs: &[syn::Attribute],
-    attr_name: &str,
-    meta_key: &str,
-) -> Option<MetaItem> {
-    visit_attr_metas(attrs, attr_name, |meta_item| {
-        if meta_item.key.is_ident(meta_key) && meta_item.value.is_some() {
-            Break(meta_item)
-        } else {
-            Continue(())
-        }
-    })
-}
-
 /// Visits each meta item within each `#[ATTR_NAME(...)]` attribute, calling `visitor` on each one.
 ///
 /// If `visitor` returns `Break`, the iteration stops and the value is returned.
