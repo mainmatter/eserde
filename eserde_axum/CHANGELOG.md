@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/mainmatter/eserde/compare/eserde_axum-0.1.1...eserde_axum-0.1.2) - 2025-03-03
+
+
+### 🐛 Bug Fixes
+- error message ordering (by @MingweiSamuel) - #25
+- ensure `parse_nested_meta` properly handles values, fix [#24](https://github.com/mainmatter/eserde/pull/24) (by @MingweiSamuel) - #25
+
+
+### Contributors
+
+* @MingweiSamuel
+
 ## [0.1.1](https://github.com/mainmatter/eserde/compare/eserde_axum-0.1.0...eserde_axum-0.1.1) - 2025-02-14
 
 
