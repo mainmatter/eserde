@@ -14,7 +14,7 @@ description = "A derive macro for the eserde crate"
 proc-macro = true
 
 [dependencies]
-syn = { workspace = true, features = ["extra-traits"] }
+syn = { workspace = true, features = ["extra-traits", "full"] }
 quote = { workspace = true }
 proc-macro2 = { workspace = true }
 indexmap = { workspace = true }
