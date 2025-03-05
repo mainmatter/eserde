@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/mainmatter/eserde/compare/eserde_axum-0.1.3...eserde_axum-0.1.4) - 2025-03-05
+
+
+### ⛰️ Features
+- support `#[serde(deserialize_with = "..")]`, `#[serde(default = "..")]` for fields, fix #21 ([#23](https://github.com/mainmatter/eserde/pull/23)) (by @MingweiSamuel) - #23
+
+
+### Contributors
+
+* @MingweiSamuel
+
 ## [0.1.3](https://github.com/mainmatter/eserde/compare/eserde_axum-0.1.2...eserde_axum-0.1.3) - 2025-03-03
 
 
