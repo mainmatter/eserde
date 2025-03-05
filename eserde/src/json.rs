@@ -58,7 +58,7 @@
 //! We are restricted to input types that are buffered in memory (byte slices,
 //! string slices, etc.).
 use crate::{
-    impl_edeserialize, path, reporter::ErrorReporter, DeserializationError, DeserializationErrors, EDeserialize
+    impl_edeserialize_compat, path, reporter::ErrorReporter, DeserializationError, DeserializationErrors, EDeserialize
 };
 
 /// Deserialize an instance of type `T` from a string of JSON text.
@@ -171,4 +171,4 @@ where
     Err(DeserializationErrors::from(errors))
 }
 
-impl_edeserialize!(serde_json::Number);
+impl_edeserialize_compat!(serde_json::Number);
