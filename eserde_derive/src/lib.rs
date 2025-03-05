@@ -11,6 +11,7 @@ use quote::{format_ident, quote};
 use syn::{parse_macro_input, DeriveInput};
 use unsupported::reject_unsupported_inputs;
 
+mod attr;
 mod emit;
 mod filter_attributes;
 mod model;

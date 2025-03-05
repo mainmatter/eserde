@@ -1,0 +1,87 @@
+error: expected serde deserialize_with attribute to be a string: `deserialize_with = "..."`
+ --> tests/compile_fail/malformed_serde_deserialize_with.rs:5:45
+  |
+5 |     #[serde(alias = "0", deserialize_with = u64_to_u8())]
+  |                                             ^^^^^^^^^^^
+
+error: expected serde deserialize_with attribute to be a string: `deserialize_with = "..."`
+ --> tests/compile_fail/malformed_serde_deserialize_with.rs:7:45
+  |
+7 |     #[serde(alias = "1", deserialize_with = false)]
+  |                                             ^^^^^
+
+error[E0277]: the trait bound `Result<u8, TryFromIntError>: EDeserialize<'_>` is not satisfied
+ --> tests/compile_fail/malformed_serde_deserialize_with.rs:5:5
+  |
+5 |     #[serde(alias = "0", deserialize_with = u64_to_u8())]
+  |     ^ the trait `EDeserialize<'_>` is not implemented for `Result<u8, TryFromIntError>`
+  |
+  = note: Annotate the problematic type with `#[derive(eserde::Deserialize)]` to implement the missing trait.
+
+           It may not always be possible to add the annotation, e.g. if the type is defined in another crate that you don't control.
+           If that's the case, and you're using that type for one of your fields, you can annotate the field instead!
+           Add `#[eserde(compat)]` on the field to instruct `eserde` to fallback to the vanilla deserialization logic for that type, removing the `EDeserialize` requirement.
+
+   = help: the following other types implement trait `EDeserialize<'de>`:
+             &'de [u8]
+             &'de str
+             BTreeMap<K, V>
+             BTreeSet<T>
+             Coord
+             Cow<'_, T>
+             HashMap<K, V>
+             HashSet<T>
+           and $N others
+note: required by a bound in `maybe_invalid_or_missing`
+  --> src/_macro_impl.rs
+   |
+   | pub fn maybe_invalid_or_missing<'de, D, T>(
+   |        ------------------------ required by a bound in this function
+...
+   |     T: EDeserialize<'de>,
+   |        ^^^^^^^^^^^^^^^^^ required by this bound in `maybe_invalid_or_missing`
+
+error[E0277]: the trait bound `Result<u8, TryFromIntError>: EDeserialize<'_>` is not satisfied
+ --> tests/compile_fail/malformed_serde_deserialize_with.rs:7:5
+  |
+7 |     #[serde(alias = "1", deserialize_with = false)]
+  |     ^ the trait `EDeserialize<'_>` is not implemented for `Result<u8, TryFromIntError>`
+  |
+  = note: Annotate the problematic type with `#[derive(eserde::Deserialize)]` to implement the missing trait.
+
+           It may not always be possible to add the annotation, e.g. if the type is defined in another crate that you don't control.
+           If that's the case, and you're using that type for one of your fields, you can annotate the field instead!
+           Add `#[eserde(compat)]` on the field to instruct `eserde` to fallback to the vanilla deserialization logic for that type, removing the `EDeserialize` requirement.
+
+   = help: the following other types implement trait `EDeserialize<'de>`:
+             &'de [u8]
+             &'de str
+             BTreeMap<K, V>
+             BTreeSet<T>
+             Coord
+             Cow<'_, T>
+             HashMap<K, V>
+             HashSet<T>
+           and $N others
+note: required by a bound in `maybe_invalid_or_missing`
+  --> src/_macro_impl.rs
+   |
+   | pub fn maybe_invalid_or_missing<'de, D, T>(
+   |        ------------------------ required by a bound in this function
+...
+   |     T: EDeserialize<'de>,
+   |        ^^^^^^^^^^^^^^^^^ required by this bound in `maybe_invalid_or_missing`
+
+error[E0599]: no function or associated item named `deserialize` found for struct `__ImplDeserializeForCoord` in the current scope
+ --> tests/compile_fail/malformed_serde_deserialize_with.rs:3:10
+  |
+3 | #[derive(eserde::Deserialize)]
+  |          ^^^^^^^^^^^^^^^^^^^ function or associated item not found in `__ImplDeserializeForCoord`
+4 | struct Coord {
+  | ------------ function or associated item `deserialize` not found for this struct
+  |
+  = help: items from traits can only be used if the trait is implemented and in scope
+  = note: the following traits define an item `deserialize`, perhaps you need to implement one of them:
+          candidate #1: `Deserialize`
+          candidate #2: `DeserializeSeed`
+  = note: this error originates in the derive macro `eserde::Deserialize` (in Nightly builds, run with -Z macro-backtrace for more info)

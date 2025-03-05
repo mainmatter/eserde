@@ -2,9 +2,9 @@ use std::num::TryFromIntError;
 
 #[derive(eserde::Deserialize)]
 struct Coord {
-    #[serde(alias = "0", deserialize_with = "u64_to_u8")]
+    #[serde(alias = "0", deserialize_with = u64_to_u8())]
     x: Result<u8, TryFromIntError>,
-    #[serde(alias = "1", deserialize_with = "u64_to_u8")]
+    #[serde(alias = "1", deserialize_with = false)]
     y: Result<u8, TryFromIntError>,
 }
 
