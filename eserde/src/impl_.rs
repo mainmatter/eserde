@@ -2,17 +2,30 @@
 ///
 /// Equivalent to `#[eserde(compat)]` on a field.
 ///
+/// This should only be used if `#[derive(eserde::Deserialize)]` is not possible,
+/// e.g. for types that have a manual [`serde::Deserialize`] impl.
+///
 /// # Example
 /// ```rust
-/// use serde::Deserialize;
-/// use eserde::impl_edeserialize;
+/// use serde::de::{Deserialize, Deserializer};
+/// use eserde::impl_edeserialize_compat;
 ///
-/// #[derive(Deserialize)]
-/// struct MyStruct {
-///     field: i32,
+/// #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// struct U8OrU64(Result<u8, u64>);
+/// impl<'de> Deserialize<'de> for U8OrU64 {
+///     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+///         let n = u64::deserialize(deserializer)?;
+///         Ok(U8OrU64(u8::try_from(n).map_err(|_| n)))
+///     }
 /// }
 ///
-/// impl_edeserialize_compat!(MyStruct);
+/// impl_edeserialize_compat!(U8OrU64);
+///
+/// # #[cfg(feature = "json")]
+/// # {
+/// assert_eq!(U8OrU64(Ok(42)), eserde::json::from_str::<U8OrU64>("42").unwrap());
+/// assert_eq!(U8OrU64(Err(256)), eserde::json::from_str::<U8OrU64>("256").unwrap());
+/// # }
 /// ```
 #[macro_export]
 macro_rules! impl_edeserialize_compat {
@@ -78,9 +91,6 @@ impl_edeserialize_compat! {
     std::sync::atomic::AtomicU64,
     std::sync::atomic::AtomicU8,
     std::sync::atomic::AtomicUsize,
-    std::collections::BTreeMap<K, V> {K, V where K: std::cmp::Ord},
-    std::collections::BTreeSet<T> {T where T: std::cmp::Ord},
-    std::collections::BinaryHeap<T> {T},
     std::ops::Bound<T> {T},
     std::ffi::CString,
     std::time::Duration,
@@ -107,7 +117,6 @@ impl_edeserialize_compat! {
 }
 impl_edeserialize_compat! {
     Result<T, E> {T, E},
-    std::collections::VecDeque<T> {T},
     std::ffi::OsString,
     std::marker::PhantomData<T> {T},
     std::net::SocketAddr,
@@ -134,18 +143,11 @@ impl_edeserialize_compat! {
     std::time::SystemTime,
     String,
 }
+
+// TODO: Sequences should collect the errors inside as well.
 impl_edeserialize_compat! {
-    Vec<T> {T},
     [T; 0] {T},
     [T; 1] {T},
-    [T; 2] {T},
-    [T; 3] {T},
-    [T; 4] {T},
-    [T; 5] {T},
-    [T; 6] {T},
-    [T; 7] {T},
-    [T; 8] {T},
-    [T; 9] {T},
     [T; 10] {T},
     [T; 11] {T},
     [T; 12] {T},
@@ -156,6 +158,7 @@ impl_edeserialize_compat! {
     [T; 17] {T},
     [T; 18] {T},
     [T; 19] {T},
+    [T; 2] {T},
     [T; 20] {T},
     [T; 21] {T},
     [T; 22] {T},
@@ -166,65 +169,30 @@ impl_edeserialize_compat! {
     [T; 27] {T},
     [T; 28] {T},
     [T; 29] {T},
+    [T; 3] {T},
     [T; 30] {T},
     [T; 31] {T},
     [T; 32] {T},
+    [T; 4] {T},
+    [T; 5] {T},
+    [T; 6] {T},
+    [T; 7] {T},
+    [T; 8] {T},
+    [T; 9] {T},
+    Box<[T]> {T},
+    std::collections::BinaryHeap<T> {T},
+    std::collections::BTreeMap<K, V> {K, V where K: std::cmp::Ord},
+    std::collections::BTreeSet<T> {T where T: std::cmp::Ord},
+    std::collections::VecDeque<T> {T},
+    Vec<T> {T},
 }
-
-// macro_rules! impl_edeserialize_seq {
-//     () => {};
-//     (
-//         $t:ty
-//         {
-//             $g:ident $( , $h:ident )*
-//             $(where $( $bounds:tt )* )?
-//         }
-//         $(, $( $rest:tt )* )?
-//     ) => {
-//         impl<'de, $g $( , $h )* > $crate::EDeserialize<'de> for $t
-//         where
-//             Self: $crate::_serde::Deserialize<'de>,
-//             $g : $crate::EDeserialize<'de>,
-//             $( $( $bounds )* )?
-//         {
-//             fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
-//             where
-//                 D: $crate::_serde::Deserializer<'de>,
-//             {
-//                 struct SeqVisitor< $g >(::td::marker::PhantomData< $g >);
-//                 impl<'de, T $(, $typaram)*> Visitor<'de> for SeqVisitor<T $(, $typaram)*>
-//                 where
-//                     $g : $crate::EDeserialize<'de>,
-//                 {
-//                     type Value = ();
-//                     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-//                         formatter.write_str("a sequence")
-//                     }
-//                     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-//                     where
-//                         A: SeqAccess<'de>,
-//                     {
-//                         let mut values = $with_capacity;
-//                         while let Some(value) = tri!(seq.next_element()) {
-//                             $insert(&mut values, value);
-//                         }
-//                         Ok(values)
-//                     }
-//                 }
-
-//                 // < $g as $crate::EDeserialize>::deserialize_for_errors(deserializer)
-//             }
-//         }
-//         $( $crate::impl_edeserialize_seq!( $( $rest )* ); )?
-//     };
-// }
 
 /// Implements [`crate::EDeserialize`] on the given type by falling back to `T`'s `EDeserialize` implementation.
 ///
 /// This macro is not exported, it is for internal use only, analogous to `serde`'s internal `forwarded_impl!`.
 ///
 /// Users should simply use `#[derive(EDeserialize)]` and `#[serde(transparent)]` on their single-field types.
-macro_rules! impl_edeserialize_forwarded {
+macro_rules! impl_edeserialize_transparent {
     () => {};
     (
         $t:ty
@@ -247,13 +215,12 @@ macro_rules! impl_edeserialize_forwarded {
                 <$g as $crate::EDeserialize>::deserialize_for_errors(deserializer)
             }
         }
-        $( $crate::impl_edeserialize_forwarded!( $( $rest )* ); )?
+        $( $crate::impl_edeserialize_transparent!( $( $rest )* ); )?
     };
 }
-pub(crate) use impl_edeserialize_forwarded;
+pub(crate) use impl_edeserialize_transparent;
 
-use crate::EDeserialize;
-impl_edeserialize_forwarded! {
+impl_edeserialize_transparent! {
     Box<T> { T where T: ?Sized },
     std::cell::Cell<T> { T where T: ?Sized },
     std::cell::RefCell<T> { T where T: ?Sized },
@@ -267,7 +234,7 @@ impl_edeserialize_forwarded! {
 
 impl<'de, T> crate::EDeserialize<'de> for Option<T>
 where
-    T: EDeserialize<'de>,
+    T: crate::EDeserialize<'de>,
 {
     fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
     where
@@ -276,7 +243,7 @@ where
         struct OptionVisitor<T>(std::marker::PhantomData<T>);
         impl<'de, T> serde::de::Visitor<'de> for OptionVisitor<T>
         where
-            T: EDeserialize<'de>,
+            T: crate::EDeserialize<'de>,
         {
             type Value = ();
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -295,14 +262,22 @@ where
             where
                 D: serde::Deserializer<'de>,
             {
-                T::deserialize_for_errors(deserializer)?;
+                let _ = T::deserialize_for_errors(deserializer);
                 Ok(())
             }
         }
-        deserializer
-            .deserialize_option(OptionVisitor::<T>(std::marker::PhantomData))
-            .unwrap();
-        Ok(())
+
+        let n_errors = crate::reporter::ErrorReporter::n_errors();
+        if let Err(err) =
+            deserializer.deserialize_option(OptionVisitor::<T>(std::marker::PhantomData))
+        {
+            crate::reporter::ErrorReporter::report(err);
+        }
+        if crate::reporter::ErrorReporter::n_errors() > n_errors {
+            Err(())
+        } else {
+            Ok(())
+        }
     }
 }
 

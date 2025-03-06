@@ -297,7 +297,7 @@ mod impl_;
 pub mod path;
 pub mod reporter;
 pub use errors::{DeserializationError, DeserializationErrors};
-pub(crate) use impl_::impl_edeserialize_forwarded;
+pub(crate) use impl_::impl_edeserialize_transparent;
 
 #[doc(hidden)]
 pub use serde as _serde;
