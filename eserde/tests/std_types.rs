@@ -1,4 +1,4 @@
-//! Test error reporting for std wrapper tyes like `Box<T>`, `Vec<T>`, etc.
+//! Test error reporting for `std` types.
 #![allow(dead_code)]
 
 use eserde::DeserializationErrors;
@@ -57,7 +57,7 @@ fn test_transparent() {
 // TODO: these should give more error messages than the first.
 #[test]
 fn test_seqs() {
-    const SEQ_PAYLOAD: &str = r#"[
+    const PAYLOAD: &str = r#"[
         {
             "a": { "a2": 15 },
             "b": 42,
@@ -77,11 +77,11 @@ fn test_seqs() {
     ]"#;
 
     insta::allow_duplicates! {
-        check(eserde::json::from_str::<[TopLevelStruct; 3]>(SEQ_PAYLOAD));
-        check(eserde::json::from_str::<Box<[TopLevelStruct]>>(SEQ_PAYLOAD));
-        check(eserde::json::from_str::<std::collections::LinkedList<TopLevelStruct>>(SEQ_PAYLOAD));
-        check(eserde::json::from_str::<std::collections::VecDeque<TopLevelStruct>>(SEQ_PAYLOAD));
-        check(eserde::json::from_str::<Vec<TopLevelStruct>>(SEQ_PAYLOAD));
+        check(eserde::json::from_str::<[TopLevelStruct; 3]>(PAYLOAD));
+        check(eserde::json::from_str::<Box<[TopLevelStruct]>>(PAYLOAD));
+        check(eserde::json::from_str::<std::collections::LinkedList<TopLevelStruct>>(PAYLOAD));
+        check(eserde::json::from_str::<std::collections::VecDeque<TopLevelStruct>>(PAYLOAD));
+        check(eserde::json::from_str::<Vec<TopLevelStruct>>(PAYLOAD));
     }
     fn check<T: std::fmt::Debug>(result: Result<T, DeserializationErrors>) {
         let errors = result.unwrap_err();
@@ -93,14 +93,14 @@ fn test_seqs() {
     }
 
     // Input is too long.
-    let errors = eserde::json::from_str::<[TopLevelStruct; 2]>(SEQ_PAYLOAD).unwrap_err();
+    let errors = eserde::json::from_str::<[TopLevelStruct; 2]>(PAYLOAD).unwrap_err();
     insta::assert_snapshot!(errors, @r###"
     Something went wrong during deserialization:
     - [1].a.a2: invalid value: integer `-5`, expected u32 at line 9 column 27
     "###);
 
     // Input is too short.
-    let errors = eserde::json::from_str::<[TopLevelStruct; 4]>(SEQ_PAYLOAD).unwrap_err();
+    let errors = eserde::json::from_str::<[TopLevelStruct; 4]>(PAYLOAD).unwrap_err();
     insta::assert_snapshot!(errors, @r###"
     Something went wrong during deserialization:
     - [1].a.a2: invalid value: integer `-5`, expected u32 at line 9 column 27

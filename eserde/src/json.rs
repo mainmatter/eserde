@@ -171,4 +171,8 @@ where
     Err(DeserializationErrors::from(errors))
 }
 
-impl_edeserialize_compat!(serde_json::Number);
+impl_edeserialize_compat! {
+    serde_json::value::Number,
+    serde_json::value::Value,
+    serde_json::value::Map<String, serde_json::value::Value>,
+}
