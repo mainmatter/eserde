@@ -295,7 +295,7 @@ where
             where
                 D: serde::Deserializer<'de>,
             {
-                T::deserialize_for_errors(deserializer);
+                T::deserialize_for_errors(deserializer)?;
                 Ok(())
             }
         }
