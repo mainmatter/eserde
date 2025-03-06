@@ -27,7 +27,7 @@ impl<T> MaybeInvalidOrMissing<T> {
     }
 }
 
-/// Used by `#[eserde(compat)]` fields.
+/// Used by `#[eserde(compat)]` fields (NO `#[serde(default)]`).
 impl<'de, T> serde::Deserialize<'de> for MaybeInvalidOrMissing<T>
 where
     T: serde::Deserialize<'de>,
@@ -47,7 +47,7 @@ where
     }
 }
 
-/// Used in `#[serde(deserialize_with = "..")]` for fields WITHOUT `#[serde(default)]`.
+/// Used by `#[serde(deserialize_with = "..")]` field (NO `#[serde(default)]`).
 pub fn maybe_invalid_or_missing<'de, D, T>(
     deserializer: D,
 ) -> Result<MaybeInvalidOrMissing<T>, D::Error>
@@ -83,7 +83,7 @@ impl<T> MaybeInvalid<T> {
     pub fn push_error_if_missing(&self, _field_name: &'static str) {}
 }
 
-/// Used by `#[eserde(compat)]` fields.
+/// Used by `#[eserde(compat)]` `#[serde(default)]` fields.
 impl<'de, T> serde::Deserialize<'de> for MaybeInvalid<T>
 where
     T: serde::Deserialize<'de>,
@@ -103,7 +103,7 @@ where
     }
 }
 
-/// Used in `#[serde(deserialize_with = "..")]` for fields WITH `#[serde(default)]`.
+/// Used by `#[serde(default, deserialize_with = "..")]` fields.
 pub fn maybe_invalid<'de, D, T>(deserializer: D) -> Result<MaybeInvalid<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
