@@ -65,12 +65,9 @@ pub enum MaybeInvalid<T> {
     Invalid,
 }
 
-impl<T> Default for MaybeInvalid<T>
-where
-    T: Default,
-{
+impl<T> Default for MaybeInvalid<T> {
     fn default() -> Self {
-        MaybeInvalid::Valid(Default::default())
+        MaybeInvalid::Valid(PhantomData)
     }
 }
 
