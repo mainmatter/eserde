@@ -62,17 +62,17 @@ impl_edeserialize_compat! {
     char,
     f32,
     f64,
-    i128,
+    i8,
     i16,
     i32,
     i64,
-    i8,
+    i128,
     isize,
-    u128,
+    u8,
     u16,
     u32,
     u64,
-    u8,
+    u128,
     usize,
 }
 impl_edeserialize_compat! {
@@ -81,15 +81,15 @@ impl_edeserialize_compat! {
     &'de str,
     (),
     std::sync::atomic::AtomicBool,
+    std::sync::atomic::AtomicI8,
     std::sync::atomic::AtomicI16,
     std::sync::atomic::AtomicI32,
     std::sync::atomic::AtomicI64,
-    std::sync::atomic::AtomicI8,
     std::sync::atomic::AtomicIsize,
+    std::sync::atomic::AtomicU8,
     std::sync::atomic::AtomicU16,
     std::sync::atomic::AtomicU32,
     std::sync::atomic::AtomicU64,
-    std::sync::atomic::AtomicU8,
     std::sync::atomic::AtomicUsize,
     std::ops::Bound<T> {T},
     std::ffi::CString,
@@ -99,7 +99,6 @@ impl_edeserialize_compat! {
     std::net::IpAddr,
     std::net::Ipv4Addr,
     std::net::Ipv6Addr,
-    std::collections::LinkedList<T> {T},
 }
 impl_edeserialize_compat! {
     std::num::NonZeroI128,
@@ -183,6 +182,7 @@ impl_edeserialize_compat! {
     std::collections::BinaryHeap<T> {T},
     std::collections::BTreeMap<K, V> {K, V where K: std::cmp::Ord},
     std::collections::BTreeSet<T> {T where T: std::cmp::Ord},
+    std::collections::LinkedList<T> {T},
     std::collections::VecDeque<T> {T},
     Vec<T> {T},
 }
@@ -230,6 +230,7 @@ impl_edeserialize_transparent! {
     std::sync::Arc<T> { T where T: ?Sized },
     std::sync::Mutex<T> { T where T: ?Sized },
     std::sync::RwLock<T> { T where T: ?Sized },
+    std::sync::Weak<T> { T where T: ?Sized },
 }
 
 impl<'de, T> crate::EDeserialize<'de> for Option<T>
