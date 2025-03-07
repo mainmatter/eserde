@@ -94,8 +94,6 @@ impl_edeserialize_compat! {
     std::ops::Bound<T> {T},
     std::ffi::CString,
     std::time::Duration,
-    std::collections::HashMap<K, V, S> {K, V, S where K: std::hash::Hash + std::cmp::Eq, S: std::hash::BuildHasher},
-    std::collections::HashSet<T, S> {T, S where T: std::hash::Hash + std::cmp::Eq, S: std::hash::BuildHasher},
     std::net::IpAddr,
     std::net::Ipv4Addr,
     std::net::Ipv6Addr,
@@ -143,50 +141,6 @@ impl_edeserialize_compat! {
     String,
 }
 
-// TODO: Sequences should collect the errors inside as well.
-impl_edeserialize_compat! {
-    [T; 0] {T},
-    [T; 1] {T},
-    [T; 10] {T},
-    [T; 11] {T},
-    [T; 12] {T},
-    [T; 13] {T},
-    [T; 14] {T},
-    [T; 15] {T},
-    [T; 16] {T},
-    [T; 17] {T},
-    [T; 18] {T},
-    [T; 19] {T},
-    [T; 2] {T},
-    [T; 20] {T},
-    [T; 21] {T},
-    [T; 22] {T},
-    [T; 23] {T},
-    [T; 24] {T},
-    [T; 25] {T},
-    [T; 26] {T},
-    [T; 27] {T},
-    [T; 28] {T},
-    [T; 29] {T},
-    [T; 3] {T},
-    [T; 30] {T},
-    [T; 31] {T},
-    [T; 32] {T},
-    [T; 4] {T},
-    [T; 5] {T},
-    [T; 6] {T},
-    [T; 7] {T},
-    [T; 8] {T},
-    [T; 9] {T},
-    Box<[T]> {T},
-    std::collections::BinaryHeap<T> {T},
-    std::collections::BTreeMap<K, V> {K, V where K: std::cmp::Ord},
-    std::collections::BTreeSet<T> {T where T: std::cmp::Ord},
-    std::collections::LinkedList<T> {T},
-    std::collections::VecDeque<T> {T},
-    Vec<T> {T},
-}
-
 /// Implements [`crate::EDeserialize`] on the given type by falling back to `T`'s `EDeserialize` implementation.
 ///
 /// This macro is not exported, it is for internal use only, analogous to `serde`'s internal `forwarded_impl!`.
@@ -205,7 +159,7 @@ macro_rules! impl_edeserialize_transparent {
         impl<'de, $g > $crate::EDeserialize<'de> for $t
         where
             Self: $crate::_serde::Deserialize<'de>,
-            $g: $crate::EDeserialize<'de>,
+            $g : $crate::EDeserialize<'de>,
             $( $( $bounds )* )?
         {
             fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
@@ -233,6 +187,192 @@ impl_edeserialize_transparent! {
     std::sync::Weak<T> { T where T: ?Sized },
 }
 
+/// Implements [`crate::EDeserialize`] on the given sequence type by falling back to `T`'s `EDeserialize` implementation.
+macro_rules! impl_edeserialize_seq {
+    () => {};
+    (
+        $t:ty
+        {
+            $( $n:literal ; )?
+            $g:ident $( , $h:ident ),* $(,)?
+            $(where $( $bounds:tt )* )?
+        }
+        $(, $( $rest:tt )* )?
+    ) => {
+        impl<'de, $g $( , $h )* > $crate::EDeserialize<'de> for $t
+        where
+            Self: $crate::_serde::Deserialize<'de>,
+            $g : $crate::EDeserialize<'de>,
+            $( $( $bounds )* )?
+        {
+            fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
+            where
+                D: $crate::_serde::Deserializer<'de>,
+            {
+                // Wrapper which always succeeds but reports errors.
+                struct Wrapper< $g >(::std::marker::PhantomData< $g >);
+                impl<'de,  $g > $crate::_serde::de::Deserialize<'de> for Wrapper< $g >
+                where
+                    $g : $crate::EDeserialize<'de>,
+                {
+                    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                    where
+                        D: $crate::_serde::Deserializer<'de>,
+                    {
+                        let _ =  $g ::deserialize_for_errors(deserializer);
+                        Ok(Self(::std::marker::PhantomData))
+                    }
+                }
+
+                let n_errors = $crate::reporter::ErrorReporter::n_errors();
+                match <::std::vec::Vec<Wrapper< $g >> as $crate::_serde::Deserialize>::deserialize(deserializer) {
+                    Err(err) => $crate::reporter::ErrorReporter::report(err),
+                    Ok(vec) => {
+                        $(
+                            if vec.len() != $n {
+                                $crate::reporter::ErrorReporter::report(::std::format!(
+                                    "expected sequence of {} elements, found {} elements.",
+                                    $n,
+                                    vec.len(),
+                                ));
+                            }
+                        )?
+                        let _ = vec;
+                    }
+                }
+                if $crate::reporter::ErrorReporter::n_errors() > n_errors {
+                    Err(())
+                } else {
+                    Ok(())
+                }
+            }
+        }
+        $( $crate::impl_edeserialize_seq!( $( $rest )* ); )?
+    };
+}
+pub(crate) use impl_edeserialize_seq;
+
+// TODO: Sequences should collect the errors inside as well.
+impl_edeserialize_seq! {
+    [T; 0] {0; T},
+    [T; 1] {1; T},
+    [T; 2] {2; T},
+    [T; 3] {3; T},
+    [T; 4] {4; T},
+    [T; 5] {5; T},
+    [T; 6] {6; T},
+    [T; 7] {7; T},
+    [T; 8] {8; T},
+    [T; 9] {9; T},
+    [T; 10] {10; T},
+    [T; 11] {11; T},
+    [T; 12] {12; T},
+    [T; 13] {13; T},
+    [T; 14] {14; T},
+    [T; 15] {15; T},
+    [T; 16] {16; T},
+    [T; 17] {17; T},
+    [T; 18] {18; T},
+    [T; 19] {19; T},
+    [T; 20] {20; T},
+    [T; 21] {21; T},
+    [T; 22] {22; T},
+    [T; 23] {23; T},
+    [T; 24] {24; T},
+    [T; 25] {25; T},
+    [T; 26] {26; T},
+    [T; 27] {27; T},
+    [T; 28] {28; T},
+    [T; 29] {29; T},
+    [T; 30] {30; T},
+    [T; 31] {31; T},
+    [T; 32] {32; T},
+    Box<[T]> {T},
+    std::collections::BinaryHeap<T> {T},
+    std::collections::BTreeSet<T> {T where T: std::cmp::Ord},
+    std::collections::HashSet<T, S> {T, S where T: std::hash::Hash + std::cmp::Eq, S: std::hash::BuildHasher},
+    std::collections::LinkedList<T> {T},
+    std::collections::VecDeque<T> {T},
+    Vec<T> {T},
+}
+
+/// Implements [`crate::EDeserialize`] on the given sequence type by falling back to `T`'s `EDeserialize` implementation.
+macro_rules! impl_edeserialize_map {
+    () => {};
+    (
+        $t:ty
+        {
+            $k:ident , $v:ident $( , $h:ident ),* $(,)?
+            $(where $( $bounds:tt )* )?
+        }
+        $(, $( $rest:tt )* )?
+    ) => {
+        impl<'de, $k, $v $( , $h )* > $crate::EDeserialize<'de> for $t
+        where
+            Self: $crate::_serde::Deserialize<'de>,
+            $k : $crate::EDeserialize<'de>,
+            $v : $crate::EDeserialize<'de>,
+            $( $( $bounds )* )?
+        {
+            fn deserialize_for_errors<D>(deserializer: D) -> Result<(), ()>
+            where
+                D: $crate::_serde::Deserializer<'de>,
+            {
+                // Wrapper which always succeeds but reports errors.
+                struct Wrapper<T>(::std::marker::PhantomData<T>);
+                impl<'de, T> $crate::_serde::de::Deserialize<'de> for Wrapper<T>
+                where
+                    T: $crate::EDeserialize<'de>,
+                {
+                    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                    where
+                        D: $crate::_serde::Deserializer<'de>,
+                    {
+                        let _ = T::deserialize_for_errors(deserializer);
+                        Ok(Self(::std::marker::PhantomData))
+                    }
+                }
+
+                struct MapVisitor<K, V>(::std::marker::PhantomData<(K, V)>);
+                impl <'de, K, V> $crate::_serde::de::Visitor<'de> for MapVisitor<K, V>
+                where
+                    K: $crate::EDeserialize<'de>,
+                    V: $crate::EDeserialize<'de>,
+                {
+                    type Value = ();
+                    fn expecting(&self, formatter: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                        formatter.write_str("map")
+                    }
+                    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+                    where
+                        A: $crate::_serde::de::MapAccess<'de>,
+                    {
+                        while let Some((_, _)) = map.next_entry::<Wrapper<K>, Wrapper<V>>()? {}
+                        Ok(())
+                    }
+                }
+
+                let n_errors = $crate::reporter::ErrorReporter::n_errors();
+                if let Err(err) = deserializer.deserialize_map(MapVisitor::<$k, $v>(::std::marker::PhantomData)) {
+                    $crate::reporter::ErrorReporter::report(err);
+                }
+                if $crate::reporter::ErrorReporter::n_errors() > n_errors {
+                    Err(())
+                } else {
+                    Ok(())
+                }
+            }
+        }
+        $( $crate::impl_edeserialize_map!( $( $rest )* ); )?
+    };
+}
+pub(crate) use impl_edeserialize_map;
+
+impl_edeserialize_map! {
+    std::collections::BTreeMap<K, V> {K, V where K: std::cmp::Ord},
+    std::collections::HashMap<K, V, S> {K, V, S where K: std::hash::Hash + std::cmp::Eq, S: std::hash::BuildHasher},
+}
+
 impl<'de, T> crate::EDeserialize<'de> for Option<T>
 where
     T: crate::EDeserialize<'de>,
@@ -241,13 +381,13 @@ where
     where
         D: serde::Deserializer<'de>,
     {
-        struct OptionVisitor<T>(std::marker::PhantomData<T>);
+        struct OptionVisitor<T>(::std::marker::PhantomData<T>);
         impl<'de, T> serde::de::Visitor<'de> for OptionVisitor<T>
         where
             T: crate::EDeserialize<'de>,
         {
             type Value = ();
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, formatter: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 formatter.write_str("option")
             }
             fn visit_unit<E>(self) -> Result<Self::Value, E>

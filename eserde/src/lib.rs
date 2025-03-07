@@ -297,6 +297,8 @@ mod impl_;
 pub mod path;
 pub mod reporter;
 pub use errors::{DeserializationError, DeserializationErrors};
+pub(crate) use impl_::impl_edeserialize_map;
+pub(crate) use impl_::impl_edeserialize_seq;
 pub(crate) use impl_::impl_edeserialize_transparent;
 
 #[doc(hidden)]

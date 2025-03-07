@@ -54,7 +54,6 @@ fn test_transparent() {
     }
 }
 
-// TODO: these should give more error messages than the first.
 #[test]
 fn test_seqs() {
     const PAYLOAD: &str = r#"[
@@ -73,6 +72,10 @@ fn test_seqs() {
             "b": 42,
             "c": "foo",
             "d": {}
+        },
+        {
+            "a": { "a2": -5 },
+            "c": 8
         }
     ]"#;
 
@@ -88,6 +91,14 @@ fn test_seqs() {
         insta::assert_snapshot!(errors, @r###"
         Something went wrong during deserialization:
         - [1].a.a2: invalid value: integer `-5`, expected u32 at line 9 column 27
+        - [1].c: invalid type: integer `8`, expected a string at line 10 column 18
+        - [1]: missing field `b`
+        - [1]: missing field `d`
+        - [3].a.a2: invalid value: integer `-5`, expected u32 at line 19 column 27
+        - [3].c: invalid type: integer `8`, expected a string at line 20 column 18
+        - [3]: missing field `b`
+        - [3]: missing field `d`
+        - expected sequence of 3 elements, found 4 elements.
         "###
         );
     }
@@ -97,6 +108,10 @@ fn test_seqs() {
     insta::assert_snapshot!(errors, @r###"
     Something went wrong during deserialization:
     - [1].a.a2: invalid value: integer `-5`, expected u32 at line 9 column 27
+    - [1].c: invalid type: integer `8`, expected a string at line 10 column 18
+    - [1]: missing field `b`
+    - [1]: missing field `d`
+    - expected sequence of 2 elements, found 3 elements.
     "###);
 
     // Input is too short.
@@ -104,5 +119,75 @@ fn test_seqs() {
     insta::assert_snapshot!(errors, @r###"
     Something went wrong during deserialization:
     - [1].a.a2: invalid value: integer `-5`, expected u32 at line 9 column 27
+    - [1].c: invalid type: integer `8`, expected a string at line 10 column 18
+    - [1]: missing field `b`
+    - [1]: missing field `d`
+    - expected sequence of 4 elements, found 3 elements.
     "###);
+}
+
+#[test]
+fn test_map_basic() {
+    const PAYLOAD: &str = r#"{"a": true, "b": 5.5, "c": -5, "d": {}}"#;
+
+    insta::allow_duplicates! {
+        check(eserde::json::from_str::<std::collections::HashMap<String, u64>>(PAYLOAD));
+        check(eserde::json::from_str::<std::collections::BTreeMap<String, u64>>(PAYLOAD));
+    }
+    fn check<T: std::fmt::Debug>(x: Result<T, DeserializationErrors>) {
+        let errs = x.unwrap_err();
+        insta::assert_snapshot!(errs, @r###"
+        Something went wrong during deserialization:
+        - a: invalid type: boolean `true`, expected u64 at line 1 column 10
+        - b: invalid type: floating point `5.5`, expected u64 at line 1 column 20
+        - c: invalid value: integer `-5`, expected u64 at line 1 column 29
+        - d: invalid type: map, expected u64 at line 1 column 36
+        - expected `,` or `}` at line 1 column 37
+        "###);
+    }
+}
+
+#[test]
+fn test_map_nested() {
+    const PAYLOAD: &str = r#"{
+        "foo": {
+            "a": { "a2": 15 },
+            "b": 42,
+            "c": "foo",
+            "d": { "a2": 100 }
+        },
+        "bar": {
+            "a": { "a2": -5 },
+            "c": 8
+        },
+        "baz": {
+            "a": { "a2": 15 },
+            "b": 42,
+            "c": "foo",
+            "d": {}
+        },
+        "bing": {
+            "a": { "a2": -5 },
+            "c": 8
+        }
+    }"#;
+
+    insta::allow_duplicates! {
+        check(eserde::json::from_str::<std::collections::HashMap<String, TopLevelStruct>>(PAYLOAD));
+        check(eserde::json::from_str::<std::collections::BTreeMap<String, TopLevelStruct>>(PAYLOAD));
+    }
+    fn check<T: std::fmt::Debug>(x: Result<T, DeserializationErrors>) {
+        let errs = x.unwrap_err();
+        insta::assert_snapshot!(errs, @r###"
+        Something went wrong during deserialization:
+        - bar.a.a2: invalid value: integer `-5`, expected u32 at line 9 column 27
+        - bar.c: invalid type: integer `8`, expected a string at line 10 column 18
+        - bar: missing field `b`
+        - bar: missing field `d`
+        - bing.a.a2: invalid value: integer `-5`, expected u32 at line 19 column 27
+        - bing.c: invalid type: integer `8`, expected a string at line 20 column 18
+        - bing: missing field `b`
+        - bing: missing field `d`
+        "###);
+    }
 }
