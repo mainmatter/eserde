@@ -10,7 +10,7 @@ where
 {
     let result: Result<T, _> = eserde::json::from_str(json);
     let errors = result.unwrap_err();
-    assert_eq!(errors.len(), 1);
+    assert_eq!(errors.len(), 1, "{}", errors);
     let error = errors.iter().next().unwrap();
     let path = error.path().expect("No path on error");
     assert_eq!(path.to_string(), expected, "The full error:\n\t{}", error);
@@ -87,7 +87,7 @@ fn test_vec() {
                 "name": "serde_json",
                 "version": 1
             }
-        }
+        ]
     }"#;
 
     test::<Package>(j, "dependencies[1].version");
