@@ -80,7 +80,7 @@ fn test_seqs() {
     ]"#;
 
     insta::allow_duplicates! {
-        check(eserde::json::from_str::<[TopLevelStruct; 3]>(PAYLOAD));
+        check(eserde::json::from_str::<[TopLevelStruct; 4]>(PAYLOAD));
         check(eserde::json::from_str::<Box<[TopLevelStruct]>>(PAYLOAD));
         check(eserde::json::from_str::<std::collections::LinkedList<TopLevelStruct>>(PAYLOAD));
         check(eserde::json::from_str::<std::collections::VecDeque<TopLevelStruct>>(PAYLOAD));
@@ -98,31 +98,38 @@ fn test_seqs() {
         - [3].c: invalid type: integer `8`, expected a string at line 20 column 18
         - [3]: missing field `b`
         - [3]: missing field `d`
-        - expected sequence of 3 elements, found 4 elements.
         "###
         );
     }
 
     // Input is too long.
-    let errors = eserde::json::from_str::<[TopLevelStruct; 2]>(PAYLOAD).unwrap_err();
+    let errors = eserde::json::from_str::<[TopLevelStruct; 3]>(PAYLOAD).unwrap_err();
     insta::assert_snapshot!(errors, @r###"
     Something went wrong during deserialization:
     - [1].a.a2: invalid value: integer `-5`, expected u32 at line 9 column 27
     - [1].c: invalid type: integer `8`, expected a string at line 10 column 18
     - [1]: missing field `b`
     - [1]: missing field `d`
-    - expected sequence of 2 elements, found 3 elements.
+    - [3].a.a2: invalid value: integer `-5`, expected u32 at line 19 column 27
+    - [3].c: invalid type: integer `8`, expected a string at line 20 column 18
+    - [3]: missing field `b`
+    - [3]: missing field `d`
+    - expected sequence of 3 elements, found 4 elements.
     "###);
 
     // Input is too short.
-    let errors = eserde::json::from_str::<[TopLevelStruct; 4]>(PAYLOAD).unwrap_err();
+    let errors = eserde::json::from_str::<[TopLevelStruct; 5]>(PAYLOAD).unwrap_err();
     insta::assert_snapshot!(errors, @r###"
     Something went wrong during deserialization:
     - [1].a.a2: invalid value: integer `-5`, expected u32 at line 9 column 27
     - [1].c: invalid type: integer `8`, expected a string at line 10 column 18
     - [1]: missing field `b`
     - [1]: missing field `d`
-    - expected sequence of 4 elements, found 3 elements.
+    - [3].a.a2: invalid value: integer `-5`, expected u32 at line 19 column 27
+    - [3].c: invalid type: integer `8`, expected a string at line 20 column 18
+    - [3]: missing field `b`
+    - [3]: missing field `d`
+    - expected sequence of 5 elements, found 4 elements.
     "###);
 }
 
