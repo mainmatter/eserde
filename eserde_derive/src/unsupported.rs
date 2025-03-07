@@ -85,7 +85,6 @@ fn reject_container_attributes(errors: &mut Vec<syn::Error>, attrs: &[syn::Attri
 fn reject_field_attributes(errors: &mut Vec<syn::Error>, field: &syn::Field) {
     for (path, example) in [
         ("skip_deserializing", "`#[serde(skip_deserializing)]`"),
-        ("with", "`#[serde(with = \"..\")]`"),
         ("bound", "`#[serde(bound = \"..\")]`"),
     ] {
         if let Some(meta_item) = find_attr_meta(&field.attrs, "serde", path) {

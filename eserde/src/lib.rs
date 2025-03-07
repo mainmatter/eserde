@@ -445,7 +445,6 @@ pub mod _macro_impl;
 ///
 /// The following [field attributes](https://serde.rs/field-attrs.html) will be rejected at compile-time:
 /// - `#[serde(skip_deserializing)]`
-/// - `#[serde(with = "...")]`
 /// - `#[serde(bound = "...")]`
 ///
 /// We plan to support most of these attributes in the future.
