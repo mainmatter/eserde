@@ -6,7 +6,7 @@ struct DeserializeWith {
     #[serde(rename = "number", deserialize_with = "deserialize_u8")]
     num: Result<u8, u64>,
 
-    #[serde(deserialize_with = "parse_generic")]
+    #[serde(with = "serde_fromstr")]
     ip: Result<IpAddr, String>,
 }
 
@@ -18,13 +18,15 @@ where
     Ok(u8::try_from(long).map_err(|_| long))
 }
 
-fn parse_generic<'de, T, D>(deserializer: D) -> Result<Result<T, String>, D::Error>
-where
-    T: std::str::FromStr,
-    D: serde::Deserializer<'de>,
-{
-    let s: String = serde::de::Deserialize::deserialize(deserializer)?;
-    Ok(s.parse().map_err(|_| s))
+mod serde_fromstr {
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<Result<T, String>, D::Error>
+    where
+        T: std::str::FromStr,
+        D: serde::Deserializer<'de>,
+    {
+        let s: String = serde::de::Deserialize::deserialize(deserializer)?;
+        Ok(s.parse().map_err(|_| s))
+    }
 }
 
 #[test]
