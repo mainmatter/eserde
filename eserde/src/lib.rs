@@ -292,6 +292,10 @@
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub mod json;
 
+#[cfg(feature = "toml")]
+#[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+pub mod toml;
+
 mod errors;
 mod impl_;
 pub mod path;
