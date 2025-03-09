@@ -4,7 +4,7 @@ use crate::path::Path;
 ///
 /// Use [`.iter()`](Self::iter) to iterator over the underlying [`DeserializationError`].
 #[derive(Debug)]
-pub struct DeserializationErrors(Vec<DeserializationError>);
+pub struct DeserializationErrors(pub Vec<DeserializationError>);
 
 impl From<Vec<DeserializationError>> for DeserializationErrors {
     fn from(errors: Vec<DeserializationError>) -> Self {
