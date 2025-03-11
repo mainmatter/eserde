@@ -332,8 +332,8 @@ impl_edeserialize_seq! {
     [T; 32] {32; T},
     Box<[T]> {T},
     std::collections::BinaryHeap<T> {T},
-    std::collections::BTreeSet<T> {T where T: std::cmp::Ord},
-    std::collections::HashSet<T, S> {T, S where T: std::hash::Hash + std::cmp::Eq, S: std::hash::BuildHasher},
+    std::collections::BTreeSet<T> {T},
+    std::collections::HashSet<T, S> {T, S},
     std::collections::LinkedList<T> {T},
     std::collections::VecDeque<T> {T},
     Vec<T> {T},
@@ -412,8 +412,8 @@ macro_rules! impl_edeserialize_map {
 pub(crate) use impl_edeserialize_map;
 
 impl_edeserialize_map! {
-    std::collections::BTreeMap<K, V> {K, V where K: std::cmp::Ord},
-    std::collections::HashMap<K, V, S> {K, V, S where K: std::hash::Hash + std::cmp::Eq, S: std::hash::BuildHasher},
+    std::collections::BTreeMap<K, V> {K, V},
+    std::collections::HashMap<K, V, S> {K, V, S},
 }
 
 impl<'de, T> crate::EDeserialize<'de> for Option<T>
