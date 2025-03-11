@@ -126,12 +126,10 @@ impl PermissiveCompanionType {
                     let dewith_path =
                         // Remove `#[serde(deserialize_with = "..")]` and get the string value.
                         remove_attr_meta(&mut field.attrs, "serde", "deserialize_with")
-                            .and_then(|meta_item| meta_item.value)
-                            .and_then(|(_eq, expr)| expr_lit_str_value(&expr))
-                            // Or else remove `#[serde(with = "..")]` and get the string value.
+                            .and_then(|meta_item| meta_str_value(&meta_item))
+                            // Or else remove `#[serde(with = "..")]` and get the string value with `"::deserialize"` appended.
                             .or_else(|| remove_attr_meta(&mut field.attrs, "serde", "with")
-                                .and_then(|meta_item| meta_item.value)
-                                .and_then(|(_eq, expr)| expr_lit_str_value(&expr))
+                                .and_then(|meta_item| meta_str_value(&meta_item))
                                 .map(|s| format!("{}::deserialize", s))
                             )
                             // Parse the string as a path.
@@ -292,8 +290,9 @@ fn collect_generic_type_params(
     }
 }
 
-/// If the `expr` is a string literal, return its value as `Some(String)`, otherwise return `None`.
-fn expr_lit_str_value(expr: &syn::Expr) -> Option<String> {
+/// If the `MetaItem` has a string literal value, return it as `Some(String)`, otherwise return `None`.
+fn meta_str_value(meta: &crate::attr::MetaItem) -> Option<String> {
+    let (_eq, expr) = meta.value.as_ref()?;
     if let syn::Expr::Lit(syn::ExprLit {
         attrs: _,
         lit: syn::Lit::Str(lit_str),
