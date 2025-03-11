@@ -127,44 +127,12 @@ impl PermissiveCompanionType {
                         // Remove `#[serde(deserialize_with = "..")]` and get the string value.
                         remove_attr_meta(&mut field.attrs, "serde", "deserialize_with")
                             .and_then(|meta_item| meta_item.value)
-                            .and_then(|(_eq, expr)| {
-                                // Get `expr` as a string literal and parse as a path.
-                                if let syn::Expr::Lit(syn::ExprLit {
-                                    attrs: _,
-                                    lit: syn::Lit::Str(lit_str),
-                                }) = expr
-                                {
-                                    Some(lit_str.value())
-                                } else {
-                                    None
-                                }
-                            })
+                            .and_then(|(_eq, expr)| expr_lit_str_value(&expr))
                             // Or else remove `#[serde(with = "..")]` and get the string value.
                             .or_else(|| remove_attr_meta(&mut field.attrs, "serde", "with")
                                 .and_then(|meta_item| meta_item.value)
-                                .and_then(|(_eq, expr)| {
-                                    // Get `expr` as the string literal value.
-                                    if let syn::Expr::Lit(syn::ExprLit {
-                                        attrs: _,
-                                        lit: syn::Lit::Str(lit_str),
-                                    }) = expr
-                                    {
-                                        let path_str = lit_str.value();
-
-                                        // Desugar the serialize side into `#[serde(serialize_with = "$path_str::serialize")]`.
-                                        let path_ser = syn::LitStr::new(
-                                            &format!("{}::serialize", path_str),
-                                            span,
-                                        );
-                                        field.attrs.push(syn::parse_quote_spanned!(span=>
-                                            #[serde(serialize_with = #path_ser)]
-                                        ));
-
-                                        Some(format!("{}::deserialize", path_str))
-                                    } else {
-                                        None
-                                    }
-                                })
+                                .and_then(|(_eq, expr)| expr_lit_str_value(&expr))
+                                .map(|s| format!("{}::deserialize", s))
                             )
                             // Parse the string as a path.
                             .and_then(|s| syn::parse_str::<syn::Path>(&s).ok());
@@ -321,5 +289,18 @@ fn collect_generic_type_params(
         t => {
             unimplemented!("{:?}", t);
         }
+    }
+}
+
+/// If the `expr` is a string literal, return its value as `Some(String)`, otherwise return `None`.
+fn expr_lit_str_value(expr: &syn::Expr) -> Option<String> {
+    if let syn::Expr::Lit(syn::ExprLit {
+        attrs: _,
+        lit: syn::Lit::Str(lit_str),
+    }) = expr
+    {
+        Some(lit_str.value())
+    } else {
+        None
     }
 }
