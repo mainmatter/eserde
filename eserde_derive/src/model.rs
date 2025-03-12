@@ -122,21 +122,18 @@ impl PermissiveCompanionType {
                 if is_eserde_compatible {
                     // Add or replace `#[serde(deserialize_with = "..")]` for our wrapper.
 
-                    // Handle user `#[serde(deserialize_with)]` attributes.
+                    // Handle user `#[serde(deserialize_with = "..")]` or `#[serde(with = "..')]` attributes.
                     let dewith_path =
+                        // Remove `#[serde(deserialize_with = "..")]` and get the string value.
                         remove_attr_meta(&mut field.attrs, "serde", "deserialize_with")
-                            .and_then(|meta_item| meta_item.value)
-                            .and_then(|(_eq, expr)| {
-                                // Get `expr` as a string literal and parse as a path.
-                                let syn::Expr::Lit(syn::ExprLit {
-                                    attrs: _,
-                                    lit: syn::Lit::Str(lit_str),
-                                }) = expr
-                                else {
-                                    return None;
-                                };
-                                syn::parse_str::<syn::Path>(lit_str.value().as_str()).ok()
-                            });
+                            .and_then(|meta_item| meta_str_value(&meta_item))
+                            // Or else remove `#[serde(with = "..")]` and get the string value with `"::deserialize"` appended.
+                            .or_else(|| remove_attr_meta(&mut field.attrs, "serde", "with")
+                                .and_then(|meta_item| meta_str_value(&meta_item))
+                                .map(|s| format!("{}::deserialize", s))
+                            )
+                            // Parse the string as a path.
+                            .and_then(|s| syn::parse_str::<syn::Path>(&s).ok());
 
                     let attr = if let Some(dewith_path) = dewith_path {
                         // User specified a custom `deserialize_with` function.
@@ -290,5 +287,19 @@ fn collect_generic_type_params(
         t => {
             unimplemented!("{:?}", t);
         }
+    }
+}
+
+/// If the `MetaItem` has a string literal value, return it as `Some(String)`, otherwise return `None`.
+fn meta_str_value(meta: &crate::attr::MetaItem) -> Option<String> {
+    let (_eq, expr) = meta.value.as_ref()?;
+    if let syn::Expr::Lit(syn::ExprLit {
+        attrs: _,
+        lit: syn::Lit::Str(lit_str),
+    }) = expr
+    {
+        Some(lit_str.value())
+    } else {
+        None
     }
 }

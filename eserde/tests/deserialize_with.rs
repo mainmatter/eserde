@@ -1,12 +1,12 @@
 use std::net::IpAddr;
 
-#[derive(eserde::Deserialize, Debug, PartialEq, Eq)]
+#[derive(eserde::Deserialize, serde::Serialize, Debug, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct DeserializeWith {
     #[serde(rename = "number", deserialize_with = "deserialize_u8")]
     num: Result<u8, u64>,
 
-    #[serde(deserialize_with = "parse_generic")]
+    #[serde(with = "serde_to_from_str")]
     ip: Result<IpAddr, String>,
 }
 
@@ -18,13 +18,26 @@ where
     Ok(u8::try_from(long).map_err(|_| long))
 }
 
-fn parse_generic<'de, T, D>(deserializer: D) -> Result<Result<T, String>, D::Error>
-where
-    T: std::str::FromStr,
-    D: serde::Deserializer<'de>,
-{
-    let s: String = serde::de::Deserialize::deserialize(deserializer)?;
-    Ok(s.parse().map_err(|_| s))
+mod serde_to_from_str {
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<Result<T, String>, D::Error>
+    where
+        T: std::str::FromStr,
+        D: serde::Deserializer<'de>,
+    {
+        let s: String = serde::de::Deserialize::deserialize(deserializer)?;
+        Ok(s.parse().map_err(|_| s))
+    }
+
+    pub fn serialize<T, S>(value: &Result<T, String>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: std::string::ToString,
+        S: serde::Serializer,
+    {
+        match value {
+            Ok(v) => serializer.serialize_str(&v.to_string()),
+            Err(e) => serializer.serialize_str(e),
+        }
+    }
 }
 
 #[test]
