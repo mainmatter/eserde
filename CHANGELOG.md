@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6](https://github.com/mainmatter/eserde/compare/0.1.5...0.1.6) - 2025-03-12
+
+
+### ⛰️ Features
+- implement `EDeserialize` for rest of `std`/`serde_json` types, make `impl_edeserialize_compat!` public, fix #26 #27 #37 ([#36](https://github.com/mainmatter/eserde/pull/36)) (by @MingweiSamuel) - #36
+- support `#[serde(with = "..")]` on fields, #18 ([#40](https://github.com/mainmatter/eserde/pull/40)) (by @MingweiSamuel) - #40
+
+
+
+### 🐛 Bug Fixes
+- allow `!Default` for `#[serde(default = "..")]` fields ([#35](https://github.com/mainmatter/eserde/pull/35)) (by @MingweiSamuel) - #35
+
+
+### Contributors
+
+* @MingweiSamuel
+
 ## [0.1.5](https://github.com/mainmatter/eserde/compare/0.1.4...0.1.5) - 2025-03-05
 
 
