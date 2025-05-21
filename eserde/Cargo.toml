@@ -35,7 +35,7 @@ toml = { workspace = true, optional = true }
 eserde_derive = { version = "=0.1.5", path = "../eserde_derive" }
 
 [dev-dependencies]
-eserde = { workspace = true, features = ["json"] }
+eserde = { workspace = true, features = ["json", "toml"] }
 eserde_test_helper = { workspace = true }
 insta = { workspace = true }
 itertools = { workspace = true }

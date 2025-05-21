@@ -152,6 +152,23 @@ There is also an `axum` integration, [`eserde_axum`](https://docs.rs/eserde_axum
 It provides an `eserde`-powered JSON extractor as a drop-in replacement for `axum`'s built-in
 one.
 
+### TOML
+
+`eserde` provides first-class support for TOML deserialization, gated behind the `toml` Cargo feature.
+
+```toml
+[dependencies]
+eserde = { version = "0.1", features = ["toml"] }
+serde = "1"
+```
+If you're working with TOML:
+- Replace `toml::from_str` with `eserde::toml::from_str`
+
+`eserde::json` doesn't support deserializing from a reader, nor from a slice, i.e. there is no equivalent to
+`serde_json::from_reader` or `serde_json::from_slice`.
+
+
+
 ### Other formats
 
 The approach used by `eserde` is compatible, in principle, with all existing `serde`-based

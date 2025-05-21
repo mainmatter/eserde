@@ -4,7 +4,6 @@ use crate::{
     path, reporter::ErrorReporter, DeserializationError, DeserializationErrors, EDeserialize,
 };
 use toml;
-use serde::Deserialize;
 
 /// Deserialize an instance of type `T` from a string of TOML text.
 ///
@@ -27,42 +26,34 @@ use serde::Deserialize;
 /// println!("{:#?}", u);
 /// # }
 /// ```
-pub fn from_str<'a, T>(s: &'a str) -> Result<T, DeserializationErrors>
+pub fn from_str<T>(s: &str) -> Result<T, DeserializationErrors>
 where
-    T: EDeserialize<'a>,
+    T: for<'a> EDeserialize<'a>,
 {
-    // First pass: attempt direct deserialization
-    let intermediate_value = match toml::from_str::<toml::Value>(s) {
-        Ok(value) => value,
-        Err(e) => {
-            return Err(DeserializationErrors::from(vec![DeserializationError {
-                path: None,
-                details: e.to_string(),
-            }]));
+    let de = toml::Deserializer::new(s);
+    let error = match T::deserialize(de) {
+        Ok(v) => {
+            return Ok(v);
         }
+        Err(e) => e,
     };
-
-    match T::deserialize(intermediate_value.clone()) {
-        Ok(v) => return Ok(v),
-        Err(_) => (),
-    }
-
     let _guard = ErrorReporter::start_deserialization();
 
-    let de = path::Deserializer::new(intermediate_value);
+    let de = toml::Deserializer::new(s);
+    let de = path::Deserializer::new(de);
 
     let errors = match T::deserialize_for_errors(de) {
         Ok(_) => vec![],
         Err(_) => ErrorReporter::take_errors(),
     };
-
-    if errors.is_empty() {
-        Err(DeserializationErrors::from(vec![DeserializationError {
+    let errors = if errors.is_empty() {
+        vec![DeserializationError {
             path: None,
-            details: "Unknown deserialization error".into(),
-        }]))
+            details: error.to_string(),
+        }]
     } else {
-        Err(DeserializationErrors(errors))
-    }
-}
+        errors
+    };
 
+    Err(DeserializationErrors::from(errors))
+}

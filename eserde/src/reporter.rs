@@ -50,7 +50,8 @@ impl ErrorReporter {
         };
         let error = DeserializationError {
             path,
-            details: e.to_string(),
+            // toml errors have newlines, json ones don't
+            details: e.to_string().trim().to_string(),
         };
         let success = DESERIALIZATION_ERRORS.with_borrow_mut(|v| {
             if let Some(v) = v {
