@@ -157,16 +157,16 @@
 //! It provides an `eserde`-powered JSON extractor as a drop-in replacement for `axum`'s built-in
 //! one.
 //!
-//!### TOML
+//! ### TOML
 //!
-//!`eserde` provides first-class support for TOML deserialization, gated behind the `toml` Cargo feature.
-//!```toml
-//![dependencies]
-//!eserde = { version = "0.1", features = ["toml"] }
-//!serde = "1"
-//!```
-//!If you're working with TOML:
-//!- Replace `toml::from_str` with `eserde::toml::from_str`
+//! `eserde` provides first-class support for TOML deserialization, gated behind the `toml` Cargo feature.
+//! ```toml
+//! [dependencies]
+//! eserde = { version = "0.1", features = ["toml"] }
+//! serde = "1"
+//! ```
+//! If you're working with TOML:
+//! - Replace `toml::from_str` with `eserde::toml::from_str`
 //!
 //! ### Other formats
 //!
