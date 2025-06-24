@@ -87,6 +87,6 @@ impl std::fmt::Display for DeserializationError {
                 write!(f, "{}: ", path)?;
             }
         }
-        write!(f, "{}", self.details)
+        write!(f, "{}", self.details.trim())
     }
 }
