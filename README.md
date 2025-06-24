@@ -164,10 +164,6 @@ serde = "1"
 If you're working with TOML:
 - Replace `toml::from_str` with `eserde::toml::from_str`
 
-`eserde::json` doesn't support deserializing from a reader, nor from a slice, i.e. there is no equivalent to
-`serde_json::from_reader` or `serde_json::from_slice`.
-
-
 
 ### Other formats
 
