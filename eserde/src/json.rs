@@ -57,6 +57,7 @@
 //! us to perform two passes over the input.\
 //! We are restricted to input types that are buffered in memory (byte slices,
 //! string slices, etc.).
+
 use crate::{
     impl_edeserialize_compat, path, reporter::ErrorReporter, DeserializationError,
     DeserializationErrors, EDeserialize,
@@ -155,6 +156,58 @@ where
 
     let mut de = serde_json::Deserializer::from_slice(s);
     let de = path::Deserializer::new(&mut de);
+
+    let errors = match T::deserialize_for_errors(de) {
+        Ok(_) => vec![],
+        Err(_) => ErrorReporter::take_errors(),
+    };
+    let errors = if errors.is_empty() {
+        vec![DeserializationError {
+            path: None,
+            details: error.to_string(),
+        }]
+    } else {
+        errors
+    };
+
+    Err(DeserializationErrors::from(errors))
+}
+
+/// Deserialize an instance of type `T` from a [`serde_json::Value`].
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(eserde::Deserialize, Debug)]
+/// struct User {
+///     fingerprint: String,
+///     location: String,
+/// }
+///
+/// # fn main() {
+/// // The type of `j` is `&[u8]`
+/// let v = serde_json::json!({
+///     "fingerprint": "0xF9BA143B95FF6D82",
+///     "location": "Menlo Park, CA"
+/// });
+///
+/// let u: User = eserde::json::from_value(v).unwrap();
+/// println!("{:#?}", u);
+/// # }
+/// ```
+pub fn from_value<T>(v: serde_json::value::Value) -> Result<T, DeserializationErrors>
+where
+    T: for<'de> EDeserialize<'de>,
+{
+    let error = match T::deserialize(&v) {
+        Ok(v) => {
+            return Ok(v);
+        }
+        Err(e) => e,
+    };
+    let _guard = ErrorReporter::start_deserialization();
+
+    let de = path::Deserializer::new(v);
 
     let errors = match T::deserialize_for_errors(de) {
         Ok(_) => vec![],
