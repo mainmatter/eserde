@@ -20,4 +20,8 @@ pub mod json;
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 pub use json::Json;
 
+#[cfg(feature = "html_form")]
+#[cfg_attr(docsrs, doc(cfg(feature = "html_form")))]
+pub mod html_form;
+
 pub(crate) mod details;

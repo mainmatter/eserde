@@ -307,6 +307,10 @@ pub mod json;
 #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
 pub mod toml;
 
+#[cfg(feature = "html_form")]
+#[cfg_attr(docsrs, doc(cfg(feature = "html_form")))]
+pub mod html_form;
+
 mod errors;
 mod impl_;
 pub mod path;

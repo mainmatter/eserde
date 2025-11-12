@@ -10,8 +10,9 @@ categories = ["encoding"]
 description = "`axum` extractors built on `eserde` to improve error responses"
 
 [features]
-default = ["json"]
+default = ["json", "html_form"]
 json = ["eserde/json", "dep:mime"]
+html_form = ["eserde/html_form", "dep:axum"]
 
 [dependencies]
 axum-core = { workspace = true }
@@ -22,6 +23,8 @@ mime = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
+axum = { workspace = true, optional = true }
+
 
 [dev-dependencies]
 axum = { workspace = true }
