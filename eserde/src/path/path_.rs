@@ -51,7 +51,7 @@ impl Path {
     }
 
     /// Returns an iterator with element type [`&Segment`][Segment].
-    pub fn iter(&self) -> Segments {
+    pub fn iter(&self) -> Segments<'_> {
         Segments {
             iter: self.segments.iter(),
         }

@@ -66,12 +66,12 @@ fn test_parse_failure() {
     );
     assert!(x.is_err(), "Expected Err: {:?}", x);
     let errs = x.unwrap_err();
-    insta::assert_snapshot!(errs, @r#"
+    insta::assert_snapshot!(errs, @r"
     Something went wrong during deserialization:
     - TOML parse error at line 2, column 20
       |
     2 |     parse_fail_here
       |                    ^
-    expected `.`, `=`
-    "#);
+    key with no value, expected `=`
+    ");
 }

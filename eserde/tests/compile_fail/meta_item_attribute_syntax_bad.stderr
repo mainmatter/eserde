@@ -10,7 +10,7 @@ error: duplicate serde attribute `default`
 3 |     #[serde(default - this parses but is not Meta Item Attribute Syntax, serde errors "expected `,`")]
   |     ^
 
-error[E0277]: the trait bound `__ImplEDeserializeForFoo: Deserialize<'_>` is not satisfied
+error[E0277]: the trait bound `__ImplEDeserializeForFoo: serde::Deserialize<'de>` is not satisfied
  --> tests/compile_fail/meta_item_attribute_syntax_bad.rs:2:8
   |
 2 | struct Foo {
