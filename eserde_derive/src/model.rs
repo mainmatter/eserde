@@ -38,6 +38,8 @@ pub struct PermissiveCompanionType {
     pub eserde_aware_generics: IndexSet<syn::Ident>,
     /// Optional impl block; contains methods for `#[serde(deserialize_with)]` attributes.
     pub impl_: Option<syn::ItemImpl>,
+    /// Optional catch-all field name for `deny_unknown_fields`.
+    pub catch_all_field_ident: Option<syn::Ident>,
 }
 
 impl PermissiveCompanionType {
@@ -186,15 +188,53 @@ impl PermissiveCompanionType {
             }
         };
 
-        match &mut companion.data {
+        let catch_all_field_ident = match &mut companion.data {
             syn::Data::Struct(data_struct) => {
                 (modify_field_types)(&mut data_struct.fields);
+
+                // Handle `#[serde(deny_unknown_fields)]` by removing the attribute and adding a `#[serde(flatten)]`
+                // catch-all map field, which will report per-unknown-field errors later.
+                if let Some(deny_unknown_fields) =
+                    find_attr_meta(&companion.attrs, "serde", "deny_unknown_fields")
+                {
+                    let span = deny_unknown_fields.span();
+                    // Remove the attribute.
+                    remove_attr_meta(&mut companion.attrs, "serde", "deny_unknown_fields");
+
+                    // TODO(mingwei)
+                    let catch_all_field_ident = syn::Ident::new("__eserde_catch_all", span);
+
+                    let catch_all_field: syn::Field = syn::parse_quote_spanned!(span=>
+                        #[serde(flatten)]
+                        #catch_all_field_ident: ::std::collections::HashMap<String, ::eserde::_macro_impl::TypedAny>
+                    );
+                    match &mut data_struct.fields {
+                        syn::Fields::Named(fields_named) => {
+                            fields_named.named.push(catch_all_field);
+                        }
+                        // TODO(mingwei): How to handle unnamed and unit structs?????
+                        syn::Fields::Unnamed(fields_unnamed) => {
+                            fields_unnamed.unnamed.push(catch_all_field);
+                        }
+                        syn::Fields::Unit => {
+                            // Convert to unnamed fields.
+                            data_struct.fields = syn::Fields::Unnamed(syn::FieldsUnnamed {
+                                paren_token: syn::token::Paren(span),
+                                unnamed: std::iter::once(catch_all_field).collect(),
+                            });
+                        }
+                    }
+                    Some(catch_all_field_ident)
+                } else {
+                    None
+                }
             }
             syn::Data::Enum(data_enum) => {
                 data_enum
                     .variants
                     .iter_mut()
                     .for_each(|variant| (modify_field_types)(&mut variant.fields));
+                None
             }
             syn::Data::Union(_) => unreachable!(),
         };
@@ -241,6 +281,7 @@ impl PermissiveCompanionType {
             ty_: companion,
             eserde_aware_generics,
             impl_,
+            catch_all_field_ident,
         }
     }
 }

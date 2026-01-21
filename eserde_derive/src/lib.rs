@@ -47,6 +47,7 @@ pub fn derive_deserialize(input: TokenStream) -> TokenStream {
         &input.data,
         companion_type_ident,
         &companion_binding,
+        companion_type.catch_all_field_ident.as_ref(),
         &n_errors,
     );
 
