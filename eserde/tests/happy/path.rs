@@ -33,7 +33,7 @@ where
             .collect::<Vec<_>>()
             .join("\n- ")
     );
-    for (error, expected) in errors.into_iter().zip(expected.into_iter()) {
+    for (error, expected) in errors.into_iter().zip(expected) {
         let path = error.path().expect("No path on error");
         assert_eq!(&path.to_string(), expected, "The full error:\n\t{}", error);
     }
