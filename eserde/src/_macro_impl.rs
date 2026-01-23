@@ -1,3 +1,5 @@
+pub use indexmap;
+
 use std::marker::PhantomData;
 
 use serde::de::Deserialize;

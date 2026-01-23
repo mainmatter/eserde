@@ -65,10 +65,10 @@ fn test_fail() {
     );
     assert!(x.is_err(), "Expected Err: {:?}", x);
     let errs = x.unwrap_err();
-    insta::assert_snapshot!(errs, @r###"
+    insta::assert_snapshot!(errs, @r#"
     Something went wrong during deserialization:
     - number: invalid type: string "foo", expected u64 at line 1 column 16
     - ip: invalid type: floating point `100.5`, expected a string at line 1 column 30
-    - foo: unknown field `foo`, expected `number` or `ip` at line 1 column 37
-    "###);
+    - unknown field `foo` of type Str
+    "#);
 }

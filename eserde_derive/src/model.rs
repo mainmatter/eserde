@@ -206,7 +206,7 @@ impl PermissiveCompanionType {
 
                     let catch_all_field: syn::Field = syn::parse_quote_spanned!(span=>
                         #[serde(flatten)]
-                        #catch_all_field_ident: ::std::collections::HashMap<String, ::eserde::_macro_impl::TypedAny>
+                        #catch_all_field_ident: ::eserde::_macro_impl::indexmap::IndexMap<String, ::eserde::_macro_impl::TypedAny>
                     );
                     match &mut data_struct.fields {
                         syn::Fields::Named(fields_named) => {

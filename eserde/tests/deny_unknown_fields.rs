@@ -44,7 +44,7 @@ fn test_unknown_fields_collections() {
     let errs = x.unwrap_err();
     insta::assert_snapshot!(errs, @r"
     Something went wrong during deserialization:
-    - unknown field `nown` of type Map([(Str, U64)])
     - unknown field `unk` of type Seq([U64, U64, U64])
+    - unknown field `nown` of type Map([(Str, U64)])
     ");
 }

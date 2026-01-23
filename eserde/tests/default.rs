@@ -50,11 +50,11 @@ fn test_fail() {
     );
     assert!(x.is_err(), "Expected Err: {:?}", x);
     let errs = x.unwrap_err();
-    insta::assert_snapshot!(errs, @r###"
+    insta::assert_snapshot!(errs, @r#"
     Something went wrong during deserialization:
     - route: invalid type: integer `0`, expected a string at line 1 column 11
     - route_1: invalid type: boolean `true`, expected a string at line 1 column 28
     - no_default: invalid type: string "5", expected unit struct __ImplEDeserializeForNoDefault at line 1 column 47
-    - route_2: unknown field `route_2`, expected one of `route`, `route_1`, `no_default` at line 1 column 58
-    "###);
+    - unknown field `route_2` of type F64
+    "#);
 }
