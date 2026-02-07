@@ -167,6 +167,7 @@ pub fn collect_missing_errors(
     companion_type: &syn::Ident,
     companion_binding: &syn::Ident,
     companion_catch_all_field_ident: Option<&syn::Ident>,
+    original_name: &syn::Ident,
     n_errors: &syn::Ident,
 ) -> proc_macro2::TokenStream {
     match input {
@@ -184,10 +185,11 @@ pub fn collect_missing_errors(
 
             let handle_catch_all_field =
                 companion_catch_all_field_ident.map(|catch_all_field_ident| {
+                    let original_name = original_name.to_string();
                     quote_spanned! {catch_all_field_ident.span()=>
                         for (unknown_field, value) in #companion_binding.#catch_all_field_ident.iter() {
                             ::eserde::reporter::ErrorReporter::report(::std::format!(
-                                "unknown field `{}` of type {:?}", unknown_field, value,
+                                "unknown field for {}: `{}` of type {:?}", #original_name, unknown_field, value,
                             ));
                         }
                     }
