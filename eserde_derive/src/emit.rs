@@ -88,7 +88,7 @@ impl<'a> ImplDeserGenerics<'a> {
         &self,
     ) -> (
         syn::ImplGenerics<'_>,
-        syn::TypeGenerics,
+        syn::TypeGenerics<'_>,
         Option<&syn::WhereClause>,
     ) {
         let (impl_generics, _, where_clause) = self.deser_generics.split_for_impl();

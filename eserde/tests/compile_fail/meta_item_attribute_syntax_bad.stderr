@@ -14,8 +14,13 @@ error[E0277]: the trait bound `__ImplEDeserializeForFoo: Deserialize<'_>` is not
  --> tests/compile_fail/meta_item_attribute_syntax_bad.rs:2:8
   |
 2 | struct Foo {
-  |        ^^^ the trait `Deserialize<'_>` is not implemented for `__ImplEDeserializeForFoo`
+  |        ^^^ unsatisfied trait bound
   |
+help: the trait `Deserialize<'_>` is not implemented for `__ImplEDeserializeForFoo`
+ --> tests/compile_fail/meta_item_attribute_syntax_bad.rs:2:1
+  |
+2 | struct Foo {
+  | ^^^^^^^^^^
   = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `__ImplEDeserializeForFoo` type
   = note: for types from other crates check whether the crate offers a `serde` feature flag
   = help: the following other types implement trait `Deserialize<'de>`:
