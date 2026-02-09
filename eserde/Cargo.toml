@@ -14,6 +14,7 @@ description = "Like `serde`, but it doesn't stop at the first deserialization er
 default = ["derive"]
 derive = ["serde/derive"]
 json = ["dep:serde_json"]
+html_form = ["dep:serde_html_form"]
 toml = ["dep:toml"]
 
 [package.metadata.docs.rs]
@@ -25,6 +26,8 @@ eserde_derive = { path = "../eserde_derive", version = "0.1" }
 serde_json = { workspace = true, optional = true }
 itoa = { workspace = true }
 toml = { workspace = true, optional = true }
+serde_html_form = { workspace = true, optional = true }
+
 
 # This cfg cannot be enabled, but it still forces Cargo to keep eserde_derive's
 # version in lockstep with eserde's, even if someone depends on the two crates
