@@ -30,20 +30,23 @@ pub fn from_str<T>(s: &str) -> Result<T, DeserializationErrors>
 where
     T: for<'a> EDeserialize<'a>,
 {
-    let de = toml::Deserializer::new(s);
-    let error = match T::deserialize(de) {
-        Ok(v) => {
-            return Ok(v);
-        }
+    let de = toml::Deserializer::parse(s);
+    let error = match de {
+        Ok(v) => match T::deserialize(v) {
+            Ok(v) => return Ok(v),
+            Err(e) => e,
+        },
         Err(e) => e,
     };
     let _guard = ErrorReporter::start_deserialization();
 
-    let de = toml::Deserializer::new(s);
-    let de = path::Deserializer::new(de);
+    let de = toml::Deserializer::parse(s).and_then(|de| Ok(path::Deserializer::new(de)));
 
-    let errors = match T::deserialize_for_errors(de) {
-        Ok(_) => vec![],
+    let errors = match de {
+        Ok(v) => match T::deserialize_for_errors(v) {
+            Ok(_) => vec![],
+            Err(_) => ErrorReporter::take_errors(),
+        },
         Err(_) => ErrorReporter::take_errors(),
     };
     let errors = if errors.is_empty() {

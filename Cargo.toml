@@ -31,4 +31,4 @@ syn = "2"
 tracing = "0.1"
 trybuild = "1"
 uuid = "1"
-toml = "0.8"
+toml = {version="0.9", features = ["parse", "serde"]}

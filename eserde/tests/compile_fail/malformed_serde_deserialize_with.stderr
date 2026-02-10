@@ -10,7 +10,7 @@ error: expected serde deserialize_with attribute to be a string: `deserialize_wi
 7 |     #[serde(alias = "1", deserialize_with = false)]
   |                                             ^^^^^
 
-error[E0277]: the trait bound `TryFromIntError: Deserialize<'_>` is not satisfied
+error[E0277]: the trait bound `TryFromIntError: serde::Deserialize<'de>` is not satisfied
  --> tests/compile_fail/malformed_serde_deserialize_with.rs:5:5
   |
  5 |     #[serde(alias = "0", deserialize_with = u64_to_u8())]
@@ -39,7 +39,7 @@ note: required by a bound in `maybe_invalid_or_missing`
    |     T: EDeserialize<'de>,
    |        ^^^^^^^^^^^^^^^^^ required by this bound in `maybe_invalid_or_missing`
 
-error[E0277]: the trait bound `TryFromIntError: Deserialize<'_>` is not satisfied
+error[E0277]: the trait bound `TryFromIntError: serde::Deserialize<'de>` is not satisfied
  --> tests/compile_fail/malformed_serde_deserialize_with.rs:7:5
   |
  7 |     #[serde(alias = "1", deserialize_with = false)]
