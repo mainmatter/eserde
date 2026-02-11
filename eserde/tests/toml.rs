@@ -42,16 +42,12 @@ fn test_fail() {
     );
     assert!(x.is_err(), "Expected Err: {:?}", x);
     let errs = x.unwrap_err();
-    insta::assert_snapshot!(errs, @r#"
+    insta::assert_snapshot!(errs, @r"
     Something went wrong during deserialization:
     - route: invalid type: integer `0`, expected a string
     - route_1: invalid type: boolean `true`, expected a string
-    - route_2: TOML parse error at line 4, column 5
-      |
-    4 |     route_2 = 5.5
-      |     ^^^^^^^
-    unknown field `route_2`, expected `route` or `route_1`
-    "#);
+    - unknown field `route_2` of type F64
+    ");
 }
 
 #[test]

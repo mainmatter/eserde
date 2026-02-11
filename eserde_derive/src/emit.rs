@@ -1,5 +1,5 @@
 use indexmap::IndexSet;
-use quote::{format_ident, quote, ToTokens};
+use quote::{format_ident, quote, quote_spanned, ToTokens};
 use syn::{Data, DeriveInput, GenericParam, Generics, Lifetime};
 
 use crate::model::{PermissiveCompanionType, ShadowType};
@@ -166,6 +166,8 @@ pub fn collect_missing_errors(
     input: &Data,
     companion_type: &syn::Ident,
     companion_binding: &syn::Ident,
+    companion_catch_all_field_ident: Option<&syn::Ident>,
+    original_name: &syn::Ident,
     n_errors: &syn::Ident,
 ) -> proc_macro2::TokenStream {
     match input {
@@ -180,8 +182,23 @@ pub fn collect_missing_errors(
                     #companion_binding.#field.push_error_if_missing(#field_str);
                 }
             });
+
+            let handle_catch_all_field =
+                companion_catch_all_field_ident.map(|catch_all_field_ident| {
+                    let original_name = original_name.to_string();
+                    quote_spanned! {catch_all_field_ident.span()=>
+                        for (unknown_field, value) in #companion_binding.#catch_all_field_ident.iter() {
+                            ::eserde::reporter::ErrorReporter::report(::std::format!(
+                                "unknown field for {}: `{}` of type {:?}", #original_name, unknown_field, value,
+                            ));
+                        }
+                    }
+                });
+
             quote! {
                 #(#accumulate)*
+                #handle_catch_all_field
+
                 let __n_new_errors = ::eserde::reporter::ErrorReporter::n_errors();
                 if __n_new_errors > #n_errors {
                     Err(())

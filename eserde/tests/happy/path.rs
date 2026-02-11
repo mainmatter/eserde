@@ -204,7 +204,7 @@ fn test_unknown_field() {
         }
     }"#;
 
-    test_many::<Package>(j, &["dependency.name", "dependency"]);
+    test_many::<Package>(j, &["dependency"]);
 }
 
 #[test]

@@ -25,6 +25,7 @@ eserde_derive = { path = "../eserde_derive", version = "0.1" }
 serde_json = { workspace = true, optional = true }
 itoa = { workspace = true }
 toml = { workspace = true, optional = true }
+indexmap = { workspace = true, features = [ "serde" ] }
 
 # This cfg cannot be enabled, but it still forces Cargo to keep eserde_derive's
 # version in lockstep with eserde's, even if someone depends on the two crates
