@@ -10,6 +10,7 @@ pub struct Deserializer<D> {
 }
 
 impl<D> Deserializer<D> {
+    /// Wraps a deserializer, adding paths to deserializing errors.
     pub fn new(de: D) -> Self {
         Deserializer { de }
     }

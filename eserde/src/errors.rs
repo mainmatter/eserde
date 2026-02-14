@@ -66,6 +66,11 @@ pub struct DeserializationError {
 }
 
 impl DeserializationError {
+    /// Creates a new error.
+    pub fn new(path: Option<Path>, details: String) -> Self {
+        Self { path, details }
+    }
+
     /// An explanation of what went wrong during deserialization.
     pub fn message(&self) -> &str {
         self.details.as_ref()

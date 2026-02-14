@@ -209,8 +209,9 @@
 //! But how does `eserde` actually work? Let's keep using JSON as an example—the same applies to other data formats.\
 //! We try to deserialize the input via `serde_json`. If deserialization succeeds, we return the deserialized value to the caller.
 //!
-//! ```rust,ignore
+//! ```rust
 //! // The source code for  `eserde::json::from_str`.
+//! # use eserde::{DeserializationErrors, EDeserialize};
 //! pub fn from_str<'a, T>(s: &'a str) -> Result<T, DeserializationErrors>
 //! where
 //!     T: EDeserialize<'a>,
@@ -222,7 +223,7 @@
 //!         }
 //!         Err(e) => e,
 //!     };
-//!     // [...]
+//!     # unimplemented!()
 //! }
 //! ```
 //!
@@ -231,11 +232,19 @@
 //! Instead of returning to the caller the error reported by `serde_json`, we do another pass over the input using
 //! [`eserde::EDeserialize::deserialize_for_errors`](crate::EDeserialize):
 //!
-//! ```rust,ignore
+//! ```rust
+//! # use eserde::{DeserializationError, DeserializationErrors, EDeserialize, reporter::ErrorReporter, path};
 //! pub fn from_str<'a, T>(s: &'a str) -> Result<T, DeserializationErrors>
 //! where
 //!     T: EDeserialize<'a>,
 //! {
+//!     # let mut de = serde_json::Deserializer::from_str(s);
+//!     # let error = match T::deserialize(&mut de) {
+//!     #     Ok(v) => {
+//!     #         return Ok(v);
+//!     #     }
+//!     #     Err(e) => e,
+//!     # };
 //!     // [...] The code above [...]
 //!     let _guard = ErrorReporter::start_deserialization();
 //!
@@ -247,10 +256,7 @@
 //!         Err(_) => ErrorReporter::take_errors(),
 //!     };
 //!     let errors = if errors.is_empty() {
-//!         vec![DeserializationError {
-//!             path: None,
-//!             details: error.to_string(),
-//!         }]
+//!         vec![DeserializationError::new(None, error.to_string())]
 //!     } else {
 //!         errors
 //!     };
