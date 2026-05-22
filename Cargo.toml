@@ -1,5 +1,12 @@
 [workspace]
-members = ["eserde_derive", "eserde", "eserde_axum", "fuzz", "test_helper"]
+members = [
+    "eserde_derive",
+    "eserde",
+    "eserde_axum",
+    "fuzz",
+    "test_helper",
+    "examples/extractor",
+]
 resolver = "2"
 
 [workspace.package]

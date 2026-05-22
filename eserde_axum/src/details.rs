@@ -50,11 +50,14 @@ where
     Extension: serde::Serialize,
 {
     fn into_response(self) -> axum_core::response::Response {
+        let status = StatusCode::try_from(self.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+
         // Use a small initial capacity of 128 bytes like serde_json::to_vec
         // https://docs.rs/serde_json/1.0.82/src/serde_json/ser.rs.html#2189
         let mut buf = BytesMut::with_capacity(128).writer();
         match serde_json::to_writer(&mut buf, &self) {
             Ok(()) => (
+                status,
                 [(CONTENT_TYPE, APPLICATION_PROBLEM_JSON)],
                 buf.into_inner().freeze(),
             )
@@ -105,5 +108,40 @@ impl InvalidRequest {
 impl axum_core::response::IntoResponse for InvalidRequest {
     fn into_response(self) -> axum_core::response::Response {
         self.into_inner().into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum_core::response::IntoResponse;
+    use http::StatusCode;
+
+    #[test]
+    fn test_problem_details_status_code() {
+        let problem = ProblemDetails {
+            type_: "test_error".into(),
+            status: 400,
+            title: "Test Error".into(),
+            detail: "This is a test error".into(),
+            extensions: Option::<()>::None,
+        };
+
+        let response = problem.into_response();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn test_problem_details_internal_server_error_status() {
+        let problem = ProblemDetails {
+            type_: "server_error".into(),
+            status: 500,
+            title: "Server Error".into(),
+            detail: "This is a server error".into(),
+            extensions: Option::<()>::None,
+        };
+
+        let response = problem.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }

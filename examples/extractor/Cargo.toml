@@ -1,0 +1,12 @@
+[package]
+name = "extractor"
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+axum.workspace = true
+eserde = { workspace = true, features = ["json"] }
+eserde_axum.workspace = true
+tokio = { workspace = true, features = ["full"] }
